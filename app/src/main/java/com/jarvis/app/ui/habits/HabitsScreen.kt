@@ -341,14 +341,22 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
 
                 Spacer(Modifier.height(24.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { viewModel.hideAddHabit() }) {
-                        Text("Cancel", color = JarvisColors.textTertiary)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { viewModel.hideAddHabit() },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = JarvisColors.textTertiary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Cancel", style = JarvisFont.mono(14, FontWeight.Medium))
                     }
                     Button(
                         onClick = { viewModel.addHabit(name, reminderEnabled, reminderHour, reminderMinute) },
+                        modifier = Modifier.weight(1f).height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.electricBlue),
                         enabled = name.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
                     ) {
                         Text("ACTIVATE", style = JarvisFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
                     }

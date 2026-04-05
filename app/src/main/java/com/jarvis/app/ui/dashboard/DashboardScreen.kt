@@ -1,8 +1,11 @@
 package com.jarvis.app.ui.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,7 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,6 +28,8 @@ import com.jarvis.app.ui.components.ArcGauge
 import com.jarvis.app.ui.components.GlassCard
 import com.jarvis.app.ui.components.ProgressRing
 import com.jarvis.app.viewmodel.DashboardViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
@@ -66,6 +73,129 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
         )
 
         Spacer(Modifier.height(24.dp))
+
+        // Today's Calendar
+        GlassCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CalendarMonth, null, tint = JarvisColors.purple, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("TODAY'S SCHEDULE", style = JarvisFont.mono(14, FontWeight.Bold), color = JarvisColors.purple, letterSpacing = 2.sp)
+            }
+            Spacer(Modifier.height(16.dp))
+
+            // Mini calendar showing current week
+            val calendar = remember { Calendar.getInstance() }
+            val today = remember { calendar.get(Calendar.DAY_OF_MONTH) }
+            val dayOfWeek = remember { calendar.get(Calendar.DAY_OF_WEEK) }
+            val monthFormat = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
+            val dayNames = remember { listOf("S", "M", "T", "W", "T", "F", "S") }
+
+            Text(
+                monthFormat.format(calendar.time).uppercase(),
+                style = JarvisFont.mono(11, FontWeight.Medium),
+                color = JarvisColors.textTertiary,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(12.dp))
+
+            // Week strip
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                val weekCal = (calendar.clone() as Calendar).apply {
+                    add(Calendar.DAY_OF_MONTH, -(dayOfWeek - 1))
+                }
+                for (i in 0..6) {
+                    val day = weekCal.get(Calendar.DAY_OF_MONTH)
+                    val isToday = day == today
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            dayNames[i],
+                            style = JarvisFont.mono(10, FontWeight.Medium),
+                            color = if (isToday) JarvisColors.purple else JarvisColors.textTertiary,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Box(
+                            modifier = Modifier.size(32.dp)
+                                .then(
+                                    if (isToday) Modifier.background(JarvisColors.purple.copy(alpha = 0.2f), CircleShape)
+                                        .border(1.5.dp, JarvisColors.purple, CircleShape)
+                                    else Modifier
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                "$day",
+                                style = JarvisFont.mono(13, if (isToday) FontWeight.Bold else FontWeight.Normal),
+                                color = if (isToday) JarvisColors.purple else JarvisColors.textSecondary,
+                            )
+                        }
+                    }
+                    weekCal.add(Calendar.DAY_OF_MONTH, 1)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Today's agenda
+            val activeNotes = notes.filter { !it.isCompleted }
+            val dueTodayNotes = activeNotes.filter { note ->
+                note.dueDate != null && run {
+                    val noteCal = Calendar.getInstance().apply { timeInMillis = note.dueDate }
+                    val todayCal = Calendar.getInstance()
+                    noteCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                    noteCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
+                }
+            }
+            val overdueNotes = activeNotes.filter { it.isOverdue }
+
+            if (dueTodayNotes.isEmpty() && overdueNotes.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CheckCircle, null, tint = JarvisColors.neonGreen, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("No tasks due today. You're all clear!", style = JarvisFont.caption, color = JarvisColors.textTertiary)
+                }
+            } else {
+                if (overdueNotes.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, null, tint = JarvisColors.alertRed, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("${overdueNotes.size} overdue", style = JarvisFont.mono(11, FontWeight.Bold), color = JarvisColors.alertRed)
+                    }
+                    overdueNotes.take(3).forEach { note ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.size(6.dp).background(JarvisColors.alertRed, CircleShape))
+                            Spacer(Modifier.width(8.dp))
+                            Text(note.title, style = JarvisFont.caption, color = JarvisColors.textSecondary, maxLines = 1)
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+                if (dueTodayNotes.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Today, null, tint = JarvisColors.electricBlue, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("${dueTodayNotes.size} due today", style = JarvisFont.mono(11, FontWeight.Bold), color = JarvisColors.electricBlue)
+                    }
+                    dueTodayNotes.take(3).forEach { note ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.size(6.dp).background(note.priority.color, CircleShape))
+                            Spacer(Modifier.width(8.dp))
+                            Text(note.title, style = JarvisFont.caption, color = JarvisColors.textSecondary, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
 
         // Health Systems HUD
         GlassCard {
@@ -178,7 +308,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
 }
 
 @Composable
-private fun SpendingStat(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
+private fun SpendingStat(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, style = JarvisFont.mono(10, FontWeight.Medium), color = JarvisColors.textTertiary, letterSpacing = 1.sp)
         Text(value, style = JarvisFont.mono(18, FontWeight.Bold), color = color)
@@ -186,7 +316,7 @@ private fun SpendingStat(label: String, value: String, color: androidx.compose.u
 }
 
 @Composable
-private fun StatBadge(label: String, count: Int, color: androidx.compose.ui.graphics.Color) {
+private fun StatBadge(label: String, count: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("$count", style = JarvisFont.mono(20, FontWeight.Bold), color = color)
         Text(label, style = JarvisFont.mono(10, FontWeight.Medium), color = JarvisColors.textTertiary)

@@ -90,7 +90,7 @@ fun NotesScreen(viewModel: NoteViewModel = viewModel()) {
                 )
             }
 
-            // Category filter chips
+            // Category + priority filter chips
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
@@ -127,7 +127,6 @@ fun NotesScreen(viewModel: NoteViewModel = viewModel()) {
                             ),
                         )
                     }
-                    // Priority filter
                     items(NotePriority.entries.toList()) { pri ->
                         FilterChip(
                             selected = filterPriority == pri,
@@ -226,13 +225,11 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Category badge
                     Box(
                         modifier = Modifier.background(note.category.color.copy(alpha = 0.15f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(note.category.displayName, style = JarvisFont.mono(9, FontWeight.Medium), color = note.category.color)
                     }
-                    // Priority badge
                     Box(
                         modifier = Modifier.background(note.priority.color.copy(alpha = 0.15f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
@@ -258,33 +255,34 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
 
             // Action buttons
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = { viewModel.toggleComplete(note) }, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = { viewModel.toggleComplete(note) }, modifier = Modifier.size(36.dp)) {
                     Icon(
                         if (note.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                         null,
                         tint = if (note.isCompleted) JarvisColors.neonGreen else JarvisColors.electricBlue,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(22.dp),
                     )
                 }
-                IconButton(onClick = { viewModel.togglePin(note) }, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = { viewModel.togglePin(note) }, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        if (note.isPinned) Icons.Default.PushPin else Icons.Default.PushPin,
+                        Icons.Default.PushPin,
                         null,
                         tint = if (note.isPinned) JarvisColors.electricBlue else JarvisColors.textTertiary.copy(alpha = 0.5f),
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(18.dp),
                     )
                 }
-                IconButton(onClick = { viewModel.startEditing(note) }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Edit, null, tint = JarvisColors.textTertiary, modifier = Modifier.size(16.dp))
+                IconButton(onClick = { viewModel.startEditing(note) }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Edit, null, tint = JarvisColors.textTertiary, modifier = Modifier.size(18.dp))
                 }
-                IconButton(onClick = { viewModel.deleteNote(note) }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Delete, null, tint = JarvisColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                IconButton(onClick = { viewModel.deleteNote(note) }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Delete, null, tint = JarvisColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddEditNoteDialog(viewModel: NoteViewModel) {
     val editingNote by viewModel.editingNote.collectAsStateWithLifecycle()
@@ -299,12 +297,18 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
     var hasReminder by remember(editingNote) { mutableStateOf(editingNote?.reminderDate != null) }
     var reminderDate by remember(editingNote) { mutableStateOf(editingNote?.reminderDate ?: System.currentTimeMillis()) }
 
+    var showDueDatePicker by remember { mutableStateOf(false) }
+    var showReminderDatePicker by remember { mutableStateOf(false) }
+
+    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
+    val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+
     Dialog(onDismissRequest = { viewModel.hideAdd() }) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = JarvisColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.cyan.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
@@ -342,10 +346,10 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                                 .background(if (selected) cat.color.copy(alpha = 0.2f) else JarvisColors.cardBackground)
                                 .border(1.dp, if (selected) cat.color else Color.Transparent, RoundedCornerShape(8.dp))
                                 .clickable { category = cat }
-                                .padding(vertical = 10.dp),
+                                .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(cat.displayName, style = JarvisFont.mono(11, FontWeight.Medium), color = if (selected) cat.color else JarvisColors.textTertiary)
+                            Text(cat.displayName, style = JarvisFont.mono(12, FontWeight.Medium), color = if (selected) cat.color else JarvisColors.textTertiary)
                         }
                     }
                 }
@@ -363,40 +367,86 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                                 .background(if (selected) pri.color.copy(alpha = 0.2f) else JarvisColors.cardBackground)
                                 .border(1.dp, if (selected) pri.color else Color.Transparent, RoundedCornerShape(8.dp))
                                 .clickable { priority = pri }
-                                .padding(vertical = 10.dp),
+                                .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(pri.displayName, style = JarvisFont.mono(11, FontWeight.Medium), color = if (selected) pri.color else JarvisColors.textTertiary)
+                            Text(pri.displayName, style = JarvisFont.mono(12, FontWeight.Medium), color = if (selected) pri.color else JarvisColors.textTertiary)
                         }
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Due Date toggle
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Due Date toggle + picker
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.CalendarToday, null, tint = JarvisColors.textSecondary, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("DUE DATE", style = JarvisFont.mono(12, FontWeight.Medium), color = JarvisColors.textSecondary)
                     Spacer(Modifier.weight(1f))
                     Switch(checked = hasDueDate, onCheckedChange = { hasDueDate = it }, colors = SwitchDefaults.colors(checkedTrackColor = JarvisColors.cyan))
                 }
+                if (hasDueDate) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                            .background(JarvisColors.cardBackground)
+                            .border(1.dp, JarvisColors.cyan.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .clickable { showDueDatePicker = true }
+                            .padding(12.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.EditCalendar, null, tint = JarvisColors.cyan, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(dateFormat.format(Date(dueDate)), style = JarvisFont.mono(14, FontWeight.Medium), color = JarvisColors.textPrimary)
+                            Spacer(Modifier.weight(1f))
+                            Text("Tap to change", style = JarvisFont.caption, color = JarvisColors.textTertiary)
+                        }
+                    }
+                }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-                // Reminder toggle
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Reminder toggle + picker
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Notifications, null, tint = JarvisColors.textSecondary, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("REMINDER", style = JarvisFont.mono(12, FontWeight.Medium), color = JarvisColors.textSecondary)
                     Spacer(Modifier.weight(1f))
                     Switch(checked = hasReminder, onCheckedChange = { hasReminder = it }, colors = SwitchDefaults.colors(checkedTrackColor = JarvisColors.cyan))
                 }
+                if (hasReminder) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                            .background(JarvisColors.cardBackground)
+                            .border(1.dp, JarvisColors.cyan.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .clickable { showReminderDatePicker = true }
+                            .padding(12.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.NotificationsActive, null, tint = JarvisColors.cyan, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "${dateFormat.format(Date(reminderDate))}, ${timeFormat.format(Date(reminderDate))}",
+                                style = JarvisFont.mono(14, FontWeight.Medium), color = JarvisColors.textPrimary,
+                            )
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(24.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { viewModel.hideAdd() }) { Text("Cancel", color = JarvisColors.textTertiary) }
+                // Action buttons — full width
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { viewModel.hideAdd() },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = JarvisColors.textTertiary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Cancel", style = JarvisFont.mono(14, FontWeight.Medium))
+                    }
                     Button(
                         onClick = {
                             viewModel.addOrUpdateNote(
@@ -405,16 +455,100 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                                 if (hasReminder) reminderDate else null,
                             )
                         },
+                        modifier = Modifier.weight(1f).height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.cyan),
                         enabled = title.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
                     ) {
                         Text(
-                            if (isEditing) "UPDATE NOTE" else "CREATE NOTE",
+                            if (isEditing) "UPDATE" else "CREATE",
                             style = JarvisFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp,
                         )
                     }
                 }
             }
+        }
+    }
+
+    // Due date picker dialog
+    if (showDueDatePicker) {
+        val dueDatePickerState = rememberDatePickerState(initialSelectedDateMillis = dueDate)
+        DatePickerDialog(
+            onDismissRequest = { showDueDatePicker = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        dueDatePickerState.selectedDateMillis?.let { dueDate = it }
+                        showDueDatePicker = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.cyan),
+                ) {
+                    Text("OK", style = JarvisFont.mono(14, FontWeight.Bold))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDueDatePicker = false }) {
+                    Text("Cancel", color = JarvisColors.textTertiary)
+                }
+            },
+            colors = DatePickerDefaults.colors(containerColor = JarvisColors.backgroundMid),
+        ) {
+            DatePicker(
+                state = dueDatePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = JarvisColors.textPrimary,
+                    headlineContentColor = JarvisColors.cyan,
+                    weekdayContentColor = JarvisColors.textTertiary,
+                    dayContentColor = JarvisColors.textSecondary,
+                    selectedDayContainerColor = JarvisColors.cyan,
+                    selectedDayContentColor = JarvisColors.backgroundDark,
+                    todayContentColor = JarvisColors.cyan,
+                    todayDateBorderColor = JarvisColors.cyan,
+                ),
+                showModeToggle = false,
+            )
+        }
+    }
+
+    // Reminder date picker dialog
+    if (showReminderDatePicker) {
+        val reminderDatePickerState = rememberDatePickerState(initialSelectedDateMillis = reminderDate)
+        DatePickerDialog(
+            onDismissRequest = { showReminderDatePicker = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        reminderDatePickerState.selectedDateMillis?.let { reminderDate = it }
+                        showReminderDatePicker = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.cyan),
+                ) {
+                    Text("OK", style = JarvisFont.mono(14, FontWeight.Bold))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReminderDatePicker = false }) {
+                    Text("Cancel", color = JarvisColors.textTertiary)
+                }
+            },
+            colors = DatePickerDefaults.colors(containerColor = JarvisColors.backgroundMid),
+        ) {
+            DatePicker(
+                state = reminderDatePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = JarvisColors.textPrimary,
+                    headlineContentColor = JarvisColors.cyan,
+                    weekdayContentColor = JarvisColors.textTertiary,
+                    dayContentColor = JarvisColors.textSecondary,
+                    selectedDayContainerColor = JarvisColors.cyan,
+                    selectedDayContentColor = JarvisColors.backgroundDark,
+                    todayContentColor = JarvisColors.cyan,
+                    todayDateBorderColor = JarvisColors.cyan,
+                ),
+                showModeToggle = false,
+            )
         }
     }
 }

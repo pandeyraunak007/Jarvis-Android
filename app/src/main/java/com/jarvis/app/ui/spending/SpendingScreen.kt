@@ -502,18 +502,23 @@ private fun CustomDateRangeDialog(viewModel: SpendingViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddExpenseDialog(viewModel: SpendingViewModel) {
     var amount by remember { mutableStateOf("") }
     var merchant by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(ExpenseCategory.Other) }
     var paymentMethod by remember { mutableStateOf(PaymentMethod.Other) }
+    var selectedDate by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
     Dialog(onDismissRequest = { viewModel.hideAddExpense() }) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = JarvisColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.warningOrange.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
         ) {
             Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
                 Text("LOG EXPENSE", style = JarvisFont.mono(18, FontWeight.Bold), color = JarvisColors.warningOrange, letterSpacing = 3.sp)
@@ -536,6 +541,26 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                 )
                 Spacer(Modifier.height(12.dp))
 
+                // Date picker
+                Text("DATE", style = JarvisFont.mono(12, FontWeight.Medium), color = JarvisColors.textSecondary)
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                        .background(JarvisColors.cardBackground)
+                        .border(1.dp, JarvisColors.warningOrange.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                        .clickable { showDatePicker = true }
+                        .padding(12.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.EditCalendar, null, tint = JarvisColors.warningOrange, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(dateFormat.format(Date(selectedDate)), style = JarvisFont.mono(14, FontWeight.Medium), color = JarvisColors.textPrimary)
+                        Spacer(Modifier.weight(1f))
+                        Text("Tap to change", style = JarvisFont.caption, color = JarvisColors.textTertiary)
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+
                 Text("CATEGORY", style = JarvisFont.mono(12, FontWeight.Medium), color = JarvisColors.textSecondary)
                 Spacer(Modifier.height(8.dp))
                 val categories = ExpenseCategory.entries
@@ -548,10 +573,10 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                                     .background(if (selected) cat.color.copy(alpha = 0.2f) else JarvisColors.cardBackground)
                                     .border(1.dp, if (selected) cat.color else Color.Transparent, RoundedCornerShape(8.dp))
                                     .clickable { category = cat }
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 10.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(cat.displayName, style = JarvisFont.mono(9, FontWeight.Medium), color = if (selected) cat.color else JarvisColors.textTertiary)
+                                Text(cat.displayName, style = JarvisFont.mono(10, FontWeight.Medium), color = if (selected) cat.color else JarvisColors.textTertiary)
                             }
                         }
                         repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -570,25 +595,78 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                                 .background(if (selected) JarvisColors.warningOrange.copy(alpha = 0.2f) else JarvisColors.cardBackground)
                                 .border(1.dp, if (selected) JarvisColors.warningOrange else Color.Transparent, RoundedCornerShape(8.dp))
                                 .clickable { paymentMethod = pm }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                         ) {
-                            Text(pm.displayName, style = JarvisFont.mono(10, FontWeight.Medium), color = if (selected) JarvisColors.warningOrange else JarvisColors.textTertiary)
+                            Text(pm.displayName, style = JarvisFont.mono(11, FontWeight.Medium), color = if (selected) JarvisColors.warningOrange else JarvisColors.textTertiary)
                         }
                     }
                 }
 
                 Spacer(Modifier.height(24.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { viewModel.hideAddExpense() }) { Text("Cancel", color = JarvisColors.textTertiary) }
+
+                // Action buttons — full width
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { viewModel.hideAddExpense() },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = JarvisColors.textTertiary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Cancel", style = JarvisFont.mono(14, FontWeight.Medium))
+                    }
                     Button(
-                        onClick = { amount.toDoubleOrNull()?.let { viewModel.addExpense(it, merchant, category, paymentMethod, System.currentTimeMillis()) } },
+                        onClick = { amount.toDoubleOrNull()?.let { viewModel.addExpense(it, merchant, category, paymentMethod, selectedDate) } },
+                        modifier = Modifier.weight(1f).height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.warningOrange),
                         enabled = amount.toDoubleOrNull() != null && amount.toDoubleOrNull()!! > 0,
+                        shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("LOG EXPENSE", style = JarvisFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
+                        Text("LOG", style = JarvisFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
                     }
                 }
             }
+        }
+    }
+
+    // Date picker dialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { selectedDate = it }
+                        showDatePicker = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.warningOrange),
+                ) {
+                    Text("OK", style = JarvisFont.mono(14, FontWeight.Bold))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = JarvisColors.textTertiary)
+                }
+            },
+            colors = DatePickerDefaults.colors(containerColor = JarvisColors.backgroundMid),
+        ) {
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = JarvisColors.textPrimary,
+                    headlineContentColor = JarvisColors.warningOrange,
+                    weekdayContentColor = JarvisColors.textTertiary,
+                    dayContentColor = JarvisColors.textSecondary,
+                    selectedDayContainerColor = JarvisColors.warningOrange,
+                    selectedDayContentColor = JarvisColors.backgroundDark,
+                    todayContentColor = JarvisColors.warningOrange,
+                    todayDateBorderColor = JarvisColors.warningOrange,
+                ),
+                showModeToggle = false,
+            )
         }
     }
 }
