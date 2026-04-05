@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -268,18 +269,21 @@ private fun CompletionCalendar(habits: List<HabitWithCompletions>, selectedMonth
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddHabitDialog(viewModel: HabitViewModel) {
     var name by remember { mutableStateOf("") }
     var reminderEnabled by remember { mutableStateOf(false) }
     var reminderHour by remember { mutableIntStateOf(9) }
     var reminderMinute by remember { mutableIntStateOf(0) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { viewModel.hideAddHabit() }) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = JarvisColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.electricBlue.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("NEW HABIT", style = JarvisFont.mono(18, FontWeight.Bold), color = JarvisColors.electricBlue, letterSpacing = 3.sp)
@@ -302,7 +306,7 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
 
                 Spacer(Modifier.height(16.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Notifications, null, tint = JarvisColors.textSecondary, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("DAILY REMINDER", style = JarvisFont.mono(12, FontWeight.Medium), color = JarvisColors.textSecondary)
@@ -316,26 +320,25 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
 
                 if (reminderEnabled) {
                     Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Time: ", style = JarvisFont.caption, color = JarvisColors.textSecondary)
-                        // Simple hour/minute selector
-                        var hourText by remember { mutableStateOf("$reminderHour") }
-                        var minuteText by remember { mutableStateOf(reminderMinute.toString().padStart(2, '0')) }
-                        OutlinedTextField(
-                            value = hourText,
-                            onValueChange = { v -> hourText = v; v.toIntOrNull()?.let { reminderHour = it.coerceIn(0, 23) } },
-                            modifier = Modifier.width(60.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = JarvisColors.electricBlue, unfocusedBorderColor = JarvisColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = JarvisColors.textPrimary, unfocusedTextColor = JarvisColors.textPrimary, cursorColor = JarvisColors.electricBlue),
-                        )
-                        Text(" : ", style = JarvisFont.mono(16, FontWeight.Bold), color = JarvisColors.textPrimary)
-                        OutlinedTextField(
-                            value = minuteText,
-                            onValueChange = { v -> minuteText = v; v.toIntOrNull()?.let { reminderMinute = it.coerceIn(0, 59) } },
-                            modifier = Modifier.width(60.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = JarvisColors.electricBlue, unfocusedBorderColor = JarvisColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = JarvisColors.textPrimary, unfocusedTextColor = JarvisColors.textPrimary, cursorColor = JarvisColors.electricBlue),
-                        )
+                    val displayTime = String.format("%02d:%02d %s",
+                        if (reminderHour % 12 == 0) 12 else reminderHour % 12,
+                        reminderMinute,
+                        if (reminderHour < 12) "AM" else "PM"
+                    )
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                            .background(JarvisColors.cardBackground)
+                            .border(1.dp, JarvisColors.electricBlue.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .clickable { showTimePicker = true }
+                            .padding(12.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Schedule, null, tint = JarvisColors.electricBlue, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(displayTime, style = JarvisFont.mono(16, FontWeight.Bold), color = JarvisColors.textPrimary)
+                            Spacer(Modifier.weight(1f))
+                            Text("Tap to change", style = JarvisFont.caption, color = JarvisColors.textTertiary)
+                        }
                     }
                 }
 
@@ -349,7 +352,7 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                         border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("Cancel", style = JarvisFont.mono(14, FontWeight.Medium))
+                        Text("Cancel", style = JarvisFont.mono(13, FontWeight.Medium), maxLines = 1)
                     }
                     Button(
                         onClick = { viewModel.addHabit(name, reminderEnabled, reminderHour, reminderMinute) },
@@ -358,7 +361,73 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                         enabled = name.isNotBlank(),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("ACTIVATE", style = JarvisFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
+                        Text("ADD HABIT", style = JarvisFont.mono(13, FontWeight.Bold), maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
+
+    // Time picker dialog
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = reminderHour,
+            initialMinute = reminderMinute,
+            is24Hour = false,
+        )
+        Dialog(onDismissRequest = { showTimePicker = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = JarvisColors.backgroundMid,
+                border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.electricBlue.copy(alpha = 0.3f)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("SET REMINDER TIME", style = JarvisFont.mono(14, FontWeight.Bold), color = JarvisColors.electricBlue, letterSpacing = 2.sp)
+                    Spacer(Modifier.height(16.dp))
+                    TimePicker(
+                        state = timePickerState,
+                        colors = TimePickerDefaults.colors(
+                            clockDialColor = JarvisColors.cardBackground,
+                            clockDialSelectedContentColor = JarvisColors.backgroundDark,
+                            clockDialUnselectedContentColor = JarvisColors.textSecondary,
+                            selectorColor = JarvisColors.electricBlue,
+                            containerColor = Color.Transparent,
+                            periodSelectorSelectedContainerColor = JarvisColors.electricBlue.copy(alpha = 0.2f),
+                            periodSelectorUnselectedContainerColor = JarvisColors.cardBackground,
+                            periodSelectorSelectedContentColor = JarvisColors.electricBlue,
+                            periodSelectorUnselectedContentColor = JarvisColors.textTertiary,
+                            timeSelectorSelectedContainerColor = JarvisColors.electricBlue.copy(alpha = 0.2f),
+                            timeSelectorUnselectedContainerColor = JarvisColors.cardBackground,
+                            timeSelectorSelectedContentColor = JarvisColors.electricBlue,
+                            timeSelectorUnselectedContentColor = JarvisColors.textSecondary,
+                        ),
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(
+                            onClick = { showTimePicker = false },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = JarvisColors.textTertiary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text("Cancel", style = JarvisFont.mono(13, FontWeight.Medium), maxLines = 1)
+                        }
+                        Button(
+                            onClick = {
+                                reminderHour = timePickerState.hour
+                                reminderMinute = timePickerState.minute
+                                showTimePicker = false
+                            },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.electricBlue),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text("SET", style = JarvisFont.mono(13, FontWeight.Bold), maxLines = 1)
+                        }
                     }
                 }
             }

@@ -54,7 +54,7 @@ class HabitManager(private val context: Context) {
     private fun scheduleReminder(habit: HabitEntity) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, NotificationReceiver::class.java).apply {
-            putExtra("title", "Jarvis Habit Reminder")
+            putExtra("title", "Voxn AI Habit Reminder")
             putExtra("message", "Don't forget: ${habit.name}")
             putExtra("id", habit.id.hashCode())
         }

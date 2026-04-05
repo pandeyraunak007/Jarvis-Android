@@ -53,7 +53,7 @@ class NoteManager(private val context: Context) {
         val reminderDate = note.reminderDate ?: return
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, NotificationReceiver::class.java).apply {
-            putExtra("title", "Jarvis Reminder")
+            putExtra("title", "Voxn AI Reminder")
             putExtra("message", note.title)
             putExtra("id", note.id.hashCode())
         }

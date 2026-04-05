@@ -299,6 +299,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
 
     var showDueDatePicker by remember { mutableStateOf(false) }
     var showReminderDatePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
 
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
     val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
@@ -416,6 +417,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                 }
                 if (hasReminder) {
                     Spacer(Modifier.height(8.dp))
+                    // Date row
                     Box(
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
                             .background(JarvisColors.cardBackground)
@@ -424,12 +426,28 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                             .padding(12.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.NotificationsActive, null, tint = JarvisColors.cyan, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.EditCalendar, null, tint = JarvisColors.cyan, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(
-                                "${dateFormat.format(Date(reminderDate))}, ${timeFormat.format(Date(reminderDate))}",
-                                style = JarvisFont.mono(14, FontWeight.Medium), color = JarvisColors.textPrimary,
-                            )
+                            Text(dateFormat.format(Date(reminderDate)), style = JarvisFont.mono(13, FontWeight.Medium), color = JarvisColors.textPrimary)
+                            Spacer(Modifier.weight(1f))
+                            Text("Date", style = JarvisFont.caption, color = JarvisColors.textTertiary)
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    // Time row
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                            .background(JarvisColors.cardBackground)
+                            .border(1.dp, JarvisColors.cyan.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .clickable { showReminderTimePicker = true }
+                            .padding(12.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Schedule, null, tint = JarvisColors.cyan, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(timeFormat.format(Date(reminderDate)), style = JarvisFont.mono(13, FontWeight.Medium), color = JarvisColors.textPrimary)
+                            Spacer(Modifier.weight(1f))
+                            Text("Time", style = JarvisFont.caption, color = JarvisColors.textTertiary)
                         }
                     }
                 }
@@ -445,7 +463,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                         border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("Cancel", style = JarvisFont.mono(14, FontWeight.Medium))
+                        Text("Cancel", style = JarvisFont.mono(13, FontWeight.Medium), maxLines = 1)
                     }
                     Button(
                         onClick = {
@@ -462,7 +480,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                     ) {
                         Text(
                             if (isEditing) "UPDATE" else "CREATE",
-                            style = JarvisFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp,
+                            style = JarvisFont.mono(13, FontWeight.Bold), maxLines = 1,
                         )
                     }
                 }
@@ -519,7 +537,16 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
             confirmButton = {
                 Button(
                     onClick = {
-                        reminderDatePickerState.selectedDateMillis?.let { reminderDate = it }
+                        reminderDatePickerState.selectedDateMillis?.let { selectedMillis ->
+                            // Preserve the time portion from existing reminderDate
+                            val existingCal = Calendar.getInstance().apply { timeInMillis = reminderDate }
+                            val newCal = Calendar.getInstance().apply {
+                                timeInMillis = selectedMillis
+                                set(Calendar.HOUR_OF_DAY, existingCal.get(Calendar.HOUR_OF_DAY))
+                                set(Calendar.MINUTE, existingCal.get(Calendar.MINUTE))
+                            }
+                            reminderDate = newCal.timeInMillis
+                        }
                         showReminderDatePicker = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.cyan),
@@ -549,6 +576,78 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                 ),
                 showModeToggle = false,
             )
+        }
+    }
+
+    // Reminder time picker dialog
+    if (showReminderTimePicker) {
+        val cal = Calendar.getInstance().apply { timeInMillis = reminderDate }
+        val timePickerState = rememberTimePickerState(
+            initialHour = cal.get(Calendar.HOUR_OF_DAY),
+            initialMinute = cal.get(Calendar.MINUTE),
+            is24Hour = false,
+        )
+        Dialog(onDismissRequest = { showReminderTimePicker = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = JarvisColors.backgroundMid,
+                border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.cyan.copy(alpha = 0.3f)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("SET REMINDER TIME", style = JarvisFont.mono(14, FontWeight.Bold), color = JarvisColors.cyan, letterSpacing = 2.sp)
+                    Spacer(Modifier.height(16.dp))
+                    TimePicker(
+                        state = timePickerState,
+                        colors = TimePickerDefaults.colors(
+                            clockDialColor = JarvisColors.cardBackground,
+                            clockDialSelectedContentColor = JarvisColors.backgroundDark,
+                            clockDialUnselectedContentColor = JarvisColors.textSecondary,
+                            selectorColor = JarvisColors.cyan,
+                            containerColor = Color.Transparent,
+                            periodSelectorSelectedContainerColor = JarvisColors.cyan.copy(alpha = 0.2f),
+                            periodSelectorUnselectedContainerColor = JarvisColors.cardBackground,
+                            periodSelectorSelectedContentColor = JarvisColors.cyan,
+                            periodSelectorUnselectedContentColor = JarvisColors.textTertiary,
+                            timeSelectorSelectedContainerColor = JarvisColors.cyan.copy(alpha = 0.2f),
+                            timeSelectorUnselectedContainerColor = JarvisColors.cardBackground,
+                            timeSelectorSelectedContentColor = JarvisColors.cyan,
+                            timeSelectorUnselectedContentColor = JarvisColors.textSecondary,
+                        ),
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(
+                            onClick = { showReminderTimePicker = false },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = JarvisColors.textTertiary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, JarvisColors.textTertiary.copy(alpha = 0.3f)),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text("Cancel", style = JarvisFont.mono(13, FontWeight.Medium), maxLines = 1)
+                        }
+                        Button(
+                            onClick = {
+                                val updatedCal = Calendar.getInstance().apply {
+                                    timeInMillis = reminderDate
+                                    set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                    set(Calendar.MINUTE, timePickerState.minute)
+                                    set(Calendar.SECOND, 0)
+                                }
+                                reminderDate = updatedCal.timeInMillis
+                                showReminderTimePicker = false
+                            },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = JarvisColors.cyan),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text("SET", style = JarvisFont.mono(13, FontWeight.Bold), maxLines = 1)
+                        }
+                    }
+                }
+            }
         }
     }
 }
