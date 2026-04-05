@@ -53,7 +53,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
     ) {
         // Header
         Text(
-            text = "J.A.R.V.I.S.",
+            text = "V.O.X.N.",
             style = JarvisFont.mono(28, FontWeight.Bold),
             color = JarvisColors.electricBlue,
             letterSpacing = 4.sp,

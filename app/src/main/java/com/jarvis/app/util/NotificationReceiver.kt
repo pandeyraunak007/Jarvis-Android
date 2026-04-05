@@ -9,13 +9,13 @@ import androidx.core.app.NotificationCompat
 
 class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val title = intent.getStringExtra("title") ?: "Jarvis"
+        val title = intent.getStringExtra("title") ?: "Voxn AI"
         val message = intent.getStringExtra("message") ?: ""
         val id = intent.getIntExtra("id", 0)
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val channel = NotificationChannel("jarvis_channel", "Jarvis Notifications", NotificationManager.IMPORTANCE_HIGH)
+        val channel = NotificationChannel("jarvis_channel", "Voxn AI Notifications", NotificationManager.IMPORTANCE_HIGH)
         manager.createNotificationChannel(channel)
 
         val notification = NotificationCompat.Builder(context, "jarvis_channel")

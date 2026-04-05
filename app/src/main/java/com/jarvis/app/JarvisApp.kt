@@ -13,7 +13,7 @@ class JarvisApp : Application() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             "jarvis_channel",
-            "Jarvis Notifications",
+            "Voxn AI Notifications",
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
             description = "Habit reminders and note notifications"
