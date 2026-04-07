@@ -19,12 +19,18 @@ class HabitManager(private val context: Context) {
 
     val habitsFlow: Flow<List<HabitWithCompletions>> = dao.getAllWithCompletions()
 
-    suspend fun addHabit(name: String, reminderEnabled: Boolean, reminderHour: Int, reminderMinute: Int) {
+    suspend fun addHabit(
+        name: String, reminderEnabled: Boolean, reminderHour: Int, reminderMinute: Int,
+        frequencyRaw: String = "Daily", targetCount: Int = 1, weeklyDaysRaw: String = "",
+    ) {
         val habit = HabitEntity(
             name = name,
             reminderEnabled = reminderEnabled,
             reminderHour = reminderHour,
             reminderMinute = reminderMinute,
+            frequencyRaw = frequencyRaw,
+            targetCount = targetCount,
+            weeklyDaysRaw = weeklyDaysRaw,
         )
         dao.insertHabit(habit)
         if (reminderEnabled) scheduleReminder(habit)

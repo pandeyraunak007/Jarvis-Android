@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.voxn.ai.data.database.entity.HabitFrequency
 import com.voxn.ai.data.database.entity.HabitWithCompletions
 import com.voxn.ai.theme.VoxnColors
 import com.voxn.ai.theme.VoxnFont
@@ -155,18 +156,35 @@ fun HabitsScreen(viewModel: HabitViewModel = viewModel()) {
 @Composable
 private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: HabitViewModel) {
     val isCompleted = habitWithCompletions.isCompletedToday()
+    val isDue = habitWithCompletions.isDueToday()
     val streak = habitWithCompletions.currentStreak()
+    val isMulti = habitWithCompletions.habit.frequency == HabitFrequency.MultiplePerDay
 
     GlassCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Checkbox
-            IconButton(onClick = { viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                    null,
-                    tint = if (isCompleted) VoxnColors.neonGreen else VoxnColors.textTertiary,
-                    modifier = Modifier.size(24.dp),
-                )
+            if (isMulti) {
+                // Progress ring for multi-per-day
+                ProgressRing(habitWithCompletions.progressToday(), VoxnColors.neonGreen, 36.dp, 3.dp) {
+                    Text(
+                        "${habitWithCompletions.todayCompletionCount()}",
+                        style = VoxnFont.mono(10, FontWeight.Bold),
+                        color = VoxnColors.neonGreen,
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
+                IconButton(onClick = { viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Add, null, tint = VoxnColors.neonGreen, modifier = Modifier.size(18.dp))
+                }
+            } else {
+                // Checkbox for daily/weekly
+                IconButton(onClick = { viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                        null,
+                        tint = if (isCompleted) VoxnColors.neonGreen else VoxnColors.textTertiary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(12.dp))
 
@@ -175,8 +193,18 @@ private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: Habi
                     habitWithCompletions.habit.name,
                     style = VoxnFont.cardTitle,
                     color = if (isCompleted) VoxnColors.textTertiary else VoxnColors.textPrimary,
-                    textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
+                    textDecoration = if (isCompleted && !isMulti) TextDecoration.LineThrough else null,
                 )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        habitWithCompletions.habit.frequencyLabel,
+                        style = VoxnFont.mono(9, FontWeight.Medium),
+                        color = VoxnColors.textTertiary,
+                    )
+                    if (!isDue && habitWithCompletions.habit.frequency == HabitFrequency.Weekly) {
+                        Text("(not today)", style = VoxnFont.mono(9, FontWeight.Normal), color = VoxnColors.textTertiary)
+                    }
+                }
                 if (habitWithCompletions.habit.reminderEnabled) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Notifications, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(12.dp))
@@ -298,6 +326,9 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
     var reminderHour by remember { mutableIntStateOf(9) }
     var reminderMinute by remember { mutableIntStateOf(0) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var selectedFrequency by remember { mutableStateOf(HabitFrequency.Daily) }
+    var targetCount by remember { mutableIntStateOf(3) }
+    var selectedDays by remember { mutableStateOf(setOf<Int>()) }
 
     Dialog(onDismissRequest = { viewModel.hideAddHabit() }) {
         Surface(
@@ -324,6 +355,67 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
+
+                Spacer(Modifier.height(16.dp))
+
+                // Frequency selector
+                Text("FREQUENCY", style = VoxnFont.mono(12, FontWeight.Medium), color = VoxnColors.textSecondary)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    HabitFrequency.entries.forEach { freq ->
+                        val selected = selectedFrequency == freq
+                        Box(
+                            modifier = Modifier.weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (selected) VoxnColors.neonGreen.copy(alpha = 0.2f) else VoxnColors.cardBackground)
+                                .border(1.dp, if (selected) VoxnColors.neonGreen else Color.Transparent, RoundedCornerShape(8.dp))
+                                .clickable { selectedFrequency = freq }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(freq.label, style = VoxnFont.mono(10, FontWeight.Medium), color = if (selected) VoxnColors.neonGreen else VoxnColors.textTertiary)
+                        }
+                    }
+                }
+
+                // Weekly day picker
+                if (selectedFrequency == HabitFrequency.Weekly) {
+                    Spacer(Modifier.height(12.dp))
+                    Text("ACTIVE DAYS", style = VoxnFont.mono(12, FontWeight.Medium), color = VoxnColors.textSecondary)
+                    Spacer(Modifier.height(8.dp))
+                    val dayNames = listOf("S" to 1, "M" to 2, "T" to 3, "W" to 4, "T" to 5, "F" to 6, "S" to 7)
+                    Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                        dayNames.forEach { (label, dayNum) ->
+                            val isActive = selectedDays.contains(dayNum)
+                            Box(
+                                modifier = Modifier.size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isActive) VoxnColors.neonGreen.copy(alpha = 0.2f) else VoxnColors.cardBackground)
+                                    .border(1.dp, if (isActive) VoxnColors.neonGreen else VoxnColors.textTertiary.copy(alpha = 0.3f), CircleShape)
+                                    .clickable { selectedDays = if (isActive) selectedDays - dayNum else selectedDays + dayNum },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(label, style = VoxnFont.mono(12, FontWeight.Bold), color = if (isActive) VoxnColors.neonGreen else VoxnColors.textTertiary)
+                            }
+                        }
+                    }
+                }
+
+                // Target count for multi-per-day
+                if (selectedFrequency == HabitFrequency.MultiplePerDay) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text("TARGET PER DAY", style = VoxnFont.mono(12, FontWeight.Medium), color = VoxnColors.textSecondary)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = { if (targetCount > 2) targetCount-- }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Remove, null, tint = VoxnColors.textSecondary, modifier = Modifier.size(18.dp))
+                        }
+                        Text("$targetCount", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.neonGreen)
+                        IconButton(onClick = { if (targetCount < 20) targetCount++ }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Add, null, tint = VoxnColors.textSecondary, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(16.dp))
 
@@ -376,7 +468,13 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                         Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1)
                     }
                     Button(
-                        onClick = { viewModel.addHabit(name, reminderEnabled, reminderHour, reminderMinute) },
+                        onClick = {
+                            viewModel.addHabit(
+                                name, reminderEnabled, reminderHour, reminderMinute,
+                                selectedFrequency.name, targetCount,
+                                selectedDays.sorted().joinToString(","),
+                            )
+                        },
                         modifier = Modifier.weight(1f).height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
                         enabled = name.isNotBlank(),

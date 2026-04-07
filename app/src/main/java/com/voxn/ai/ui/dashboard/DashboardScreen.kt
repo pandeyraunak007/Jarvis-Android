@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.voxn.ai.theme.VoxnColors
+import com.voxn.ai.viewmodel.BriefLine
+import com.voxn.ai.viewmodel.SmartAlert
 import com.voxn.ai.theme.VoxnFont
 import com.voxn.ai.ui.components.ArcGauge
 import com.voxn.ai.ui.components.GlassCard
@@ -74,6 +76,51 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
         )
 
         Spacer(Modifier.height(24.dp))
+
+        // Smart Alerts
+        val alerts = viewModel.generateSmartAlerts(expenses, notes)
+        if (alerts.isNotEmpty()) {
+            GlassCard {
+                alerts.forEach { alert ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                            .background(alert.color.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                    ) {
+                        Text(alert.icon, style = VoxnFont.cardBody)
+                        Spacer(Modifier.width(8.dp))
+                        Text(alert.text, style = VoxnFont.mono(11, FontWeight.Medium), color = alert.color)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // Daily Brief
+        val briefLines = viewModel.generateDailyBrief(expenses, habits, notes, healthData)
+        if (briefLines.isNotEmpty()) {
+            GlassCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome, null, tint = VoxnColors.electricBlue, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("DAILY BRIEF", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 2.sp)
+                }
+                Spacer(Modifier.height(12.dp))
+                briefLines.forEach { line ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Text(line.icon, style = VoxnFont.caption)
+                        Spacer(Modifier.width(8.dp))
+                        Text(line.text, style = VoxnFont.cardBody, color = line.color)
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
 
         // Today's Calendar
         GlassCard {

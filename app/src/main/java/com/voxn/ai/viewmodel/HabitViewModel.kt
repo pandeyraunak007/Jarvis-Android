@@ -28,10 +28,13 @@ class HabitViewModel(app: Application) : AndroidViewModel(app) {
     fun showAddHabit() { _showAddDialog.value = true }
     fun hideAddHabit() { _showAddDialog.value = false }
 
-    fun addHabit(name: String, reminderEnabled: Boolean, hour: Int, minute: Int) {
+    fun addHabit(
+        name: String, reminderEnabled: Boolean, hour: Int, minute: Int,
+        frequencyRaw: String = "Daily", targetCount: Int = 1, weeklyDaysRaw: String = "",
+    ) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            manager.addHabit(name, reminderEnabled, hour, minute)
+            manager.addHabit(name, reminderEnabled, hour, minute, frequencyRaw, targetCount, weeklyDaysRaw)
             _showAddDialog.value = false
         }
     }
