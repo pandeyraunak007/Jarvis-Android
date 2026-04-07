@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
 
     <application
-        android:name=".JarvisApp"
+        android:name=".VoxnApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="Voxn AI"
@@ -33,6 +33,14 @@
         <receiver
             android:name=".util.NotificationReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".util.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Health Connect permissions rationale activity -->
         <activity

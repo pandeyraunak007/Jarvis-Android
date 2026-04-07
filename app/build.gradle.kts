@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -6,21 +8,38 @@ plugins {
 }
 
 android {
-    namespace = "com.jarvis.app"
+    namespace = "com.voxn.ai"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.jarvis.app"
+        applicationId = "com.voxn.ai"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
 
+    // Release signing — generate a keystore first:
+    // keytool -genkey -v -keystore release.keystore -alias voxn -keyalg RSA -keysize 2048 -validity 10000
+    signingConfigs {
+        create("release") {
+            val props = Properties()
+            val localPropsFile = rootProject.file("local.properties")
+            if (localPropsFile.exists()) props.load(localPropsFile.inputStream())
+
+            storeFile = rootProject.file(props.getProperty("RELEASE_STORE_FILE", "release.keystore"))
+            storePassword = props.getProperty("RELEASE_STORE_PASSWORD", "")
+            keyAlias = props.getProperty("RELEASE_KEY_ALIAS", "")
+            keyPassword = props.getProperty("RELEASE_KEY_PASSWORD", "")
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -33,6 +52,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -54,6 +77,9 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
 
     // Health Connect
     implementation("androidx.health.connect:connect-client:1.1.0-alpha10")

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxn AI — Privacy Policy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0A0A0F;
+            color: #e0e0e0;
+            line-height: 1.7;
+            padding: 24px;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+        h1 {
+            color: #00D4FF;
+            font-size: 28px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #00D4FF;
+            font-size: 20px;
+            margin-top: 36px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        p, li {
+            color: #ccc;
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+        ul {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        li { margin-bottom: 6px; }
+        strong { color: #e0e0e0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            background: rgba(0, 212, 255, 0.1);
+            color: #00D4FF;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+        }
+        td {
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #bbb;
+        }
+        a { color: #00D4FF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .badge {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.12);
+            color: #00D4FF;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 24px;
+        }
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voxn AI — Privacy Policy</h1>
+        <div class="subtitle">Effective Date: April 7, 2026 &middot; Developer: Raunak Pandey</div>
+        <span class="badge">v1.0</span>
+
+        <h2>Data Collected</h2>
+        <p>Voxn AI collects and stores the following data <strong>locally on your device only</strong>:</p>
+        <ul>
+            <li><strong>Health data</strong> — Steps, calories burned, sleep duration, and exercise minutes read from Health Connect (read-only).</li>
+            <li><strong>Financial data</strong> — User-entered expenses and income, including amount, merchant, category, and payment method.</li>
+            <li><strong>Habits</strong> — User-created habit names, reminder times, and completion history.</li>
+            <li><strong>Notes &amp; Reminders</strong> — User-created notes with titles, body text, categories, priorities, due dates, and reminder dates.</li>
+            <li><strong>User preferences</strong> — Display name and app settings (e.g., monthly budget, savings goal).</li>
+        </ul>
+        <p>No personal information (name, email, phone number, location) is collected beyond what the user voluntarily enters.</p>
+
+        <h2>Data Storage</h2>
+        <p>All data is stored <strong>locally on your device</strong> using an encrypted SQLite database (protected by Android's file-based encryption). No data is transmitted to any server, cloud service, or external system.</p>
+
+        <h2>Third-Party Sharing</h2>
+        <p>Voxn AI does <strong>not</strong> share any data with third parties. There are:</p>
+        <ul>
+            <li>No analytics SDKs</li>
+            <li>No crash reporting services</li>
+            <li>No advertising networks</li>
+            <li>No server-side data collection</li>
+            <li>No data brokers or resellers</li>
+        </ul>
+
+        <h2>Health Connect Usage</h2>
+        <p>Voxn AI uses the Health Connect API in <strong>read-only</strong> mode to display health metrics within the app. Specifically:</p>
+        <ul>
+            <li><strong>READ_STEPS</strong> — Daily and weekly step counts</li>
+            <li><strong>READ_ACTIVE_CALORIES_BURNED</strong> — Daily and weekly calorie expenditure</li>
+            <li><strong>READ_SLEEP</strong> — Sleep session duration</li>
+            <li><strong>READ_EXERCISE</strong> — Exercise session duration</li>
+        </ul>
+        <p>Health data is fetched on-demand when the app is open and is <strong>never</strong> stored persistently, cached, or transmitted off-device. The app does not write any data to Health Connect.</p>
+
+        <h2>Data Deletion</h2>
+        <p>You can delete all app data at any time by:</p>
+        <ul>
+            <li><strong>Clearing app data:</strong> Go to Android Settings &gt; Apps &gt; Voxn AI &gt; Storage &gt; Clear Data.</li>
+            <li><strong>Uninstalling the app:</strong> Removing Voxn AI deletes all locally stored data permanently.</li>
+            <li><strong>Revoking Health Connect access:</strong> Go to Settings &gt; Health Connect &gt; Voxn AI &gt; Disconnect.</li>
+        </ul>
+        <p>There is no server-side data to request deletion of.</p>
+
+        <h2>Children's Privacy</h2>
+        <p>Voxn AI is not directed at children under 13 and does not knowingly collect data from children.</p>
+
+        <h2>Google Play Data Safety</h2>
+        <table>
+            <tr><th>Question</th><th>Answer</th></tr>
+            <tr><td>Does your app collect or share user data?</td><td>No data is shared with third parties. Data is collected locally only.</td></tr>
+            <tr><td>Data types accessed on-device</td><td>Health data (read-only via Health Connect), financial data (user-entered expenses), notes/tasks (user-entered)</td></tr>
+            <tr><td>Is data encrypted?</td><td>Yes — SQLite on device, encrypted at rest by Android's FDE/FBE</td></tr>
+            <tr><td>Can users request data deletion?</td><td>Yes — clear app data or uninstall</td></tr>
+            <tr><td>Analytics SDKs</td><td>None</td></tr>
+            <tr><td>Crash reporting</td><td>None</td></tr>
+            <tr><td>Advertising SDKs</td><td>None</td></tr>
+        </table>
+
+        <h2>Changes to This Policy</h2>
+        <p>We may update this privacy policy from time to time. Changes will be reflected by updating the "Effective Date" at the top of this document.</p>
+
+        <h2>Contact</h2>
+        <p>If you have questions about this privacy policy, contact us at:<br>
+        <strong>Email:</strong> <a href="mailto:raunak@voxn.ai">raunak@voxn.ai</a></p>
+
+        <div class="footer">
+            &copy; 2026 Voxn AI. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>
