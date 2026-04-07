@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.voxn.ai.data.database.entity.ExpenseEntity
 import com.voxn.ai.data.model.ExpenseCategory
 import com.voxn.ai.data.model.PaymentMethod
+import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.ExpenseParser
+import com.voxn.ai.manager.RecurringExpenseManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -30,6 +32,12 @@ data class TransactionGroup(
 
 class SpendingViewModel(app: Application) : AndroidViewModel(app) {
     private val parser = ExpenseParser(app)
+    val budgetManager = BudgetManager(app)
+    val recurringManager = RecurringExpenseManager(app)
+
+    init {
+        viewModelScope.launch { recurringManager.autoLogIfNeeded(parser) }
+    }
 
     val expenses: StateFlow<List<ExpenseEntity>> = parser.expensesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -169,6 +177,49 @@ class SpendingViewModel(app: Application) : AndroidViewModel(app) {
     fun monthlySpending(): Double {
         val month = ExpenseParser.monthStart()
         return expenses.value.filter { it.date >= month }.sumOf { it.amount }
+    }
+
+    // 14-day daily spending for bar chart
+    fun dailySpendingLast14Days(): List<Pair<String, Double>> {
+        val cal = Calendar.getInstance()
+        val dayFormat = SimpleDateFormat("d", Locale.getDefault())
+        val result = mutableListOf<Pair<String, Double>>()
+
+        for (i in 13 downTo 0) {
+            val dayCal = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, -i)
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }
+            val dayStart = dayCal.timeInMillis
+            val dayEnd = dayStart + 86400000L
+            val dayTotal = expenses.value.filter { it.date in dayStart until dayEnd }.sumOf { it.amount }
+            result.add(dayFormat.format(Date(dayStart)) to dayTotal)
+        }
+        return result
+    }
+
+    // Week-over-week spending change
+    fun weekOverWeekChange(): Double? {
+        val thisWeekStart = ExpenseParser.weekStart()
+        val lastWeekStart = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -14)
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        val thisWeek = expenses.value.filter { it.date >= thisWeekStart }.sumOf { it.amount }
+        val lastWeek = expenses.value.filter { it.date in lastWeekStart until thisWeekStart }.sumOf { it.amount }
+
+        if (lastWeek == 0.0) return null
+        return ((thisWeek - lastWeek) / lastWeek) * 100
+    }
+
+    // Average daily spend this month
+    fun averageDailySpend(): Double {
+        val monthStart = ExpenseParser.monthStart()
+        val today = Calendar.getInstance()
+        val daysElapsed = today.get(Calendar.DAY_OF_MONTH).coerceAtLeast(1)
+        val monthTotal = expenses.value.filter { it.date >= monthStart }.sumOf { it.amount }
+        return monthTotal / daysElapsed
     }
 
     // Category breakdown filtered by range

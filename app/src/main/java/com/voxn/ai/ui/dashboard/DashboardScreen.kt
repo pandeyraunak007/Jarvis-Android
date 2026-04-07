@@ -33,6 +33,7 @@ import java.util.*
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
+    val monthlyBudget by viewModel.budgetManager.monthlyBudget.collectAsStateWithLifecycle()
     val healthData by viewModel.healthData.collectAsStateWithLifecycle()
     val habits by viewModel.habits.collectAsStateWithLifecycle()
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
@@ -262,6 +263,27 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                 SpendingStat("WEEK", viewModel.weeklySpending(expenses), VoxnColors.electricBlue)
                 SpendingStat("MONTH", viewModel.monthlySpending(expenses), VoxnColors.cyan)
             }
+            // Budget progress
+            if (monthlyBudget > 0) {
+                Spacer(Modifier.height(12.dp))
+                val monthSpend = expenses.filter { it.date >= com.voxn.ai.manager.ExpenseParser.monthStart() }.sumOf { it.amount }
+                val progress = viewModel.budgetManager.budgetProgress(monthSpend)
+                val exceeded = viewModel.budgetManager.isBudgetExceeded(monthSpend)
+                val barColor = if (exceeded) VoxnColors.alertRed else if (progress > 0.8) VoxnColors.warningOrange else VoxnColors.neonGreen
+
+                Box(Modifier.fillMaxWidth().height(6.dp).background(VoxnColors.cardBackground, RoundedCornerShape(3.dp))) {
+                    Box(Modifier.fillMaxHeight().fillMaxWidth(progress.coerceAtMost(1.0).toFloat()).background(barColor, RoundedCornerShape(3.dp)))
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Budget", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary)
+                    Text(
+                        if (exceeded) "Exceeded!" else "₹${(monthlyBudget - monthSpend).toLong()} left",
+                        style = VoxnFont.mono(10, FontWeight.Bold), color = barColor,
+                    )
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
             val breakdown = viewModel.categoryBreakdown(expenses)
             if (breakdown.isNotEmpty()) {

@@ -7,6 +7,7 @@ import com.voxn.ai.data.database.entity.ExpenseEntity
 import com.voxn.ai.data.database.entity.HabitWithCompletions
 import com.voxn.ai.data.model.ExpenseCategory
 import com.voxn.ai.data.model.HealthData
+import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.ExpenseParser
 import com.voxn.ai.manager.HabitManager
 import com.voxn.ai.manager.HealthConnectManager
@@ -22,6 +23,7 @@ class DashboardViewModel(app: Application) : AndroidViewModel(app) {
     private val habitManager = HabitManager(app)
     private val expenseParser = ExpenseParser(app)
     private val noteManager = NoteManager(app)
+    val budgetManager = BudgetManager(app)
 
     val healthData: StateFlow<HealthData> = healthManager.healthData
 

@@ -54,6 +54,11 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
     val filterSearch by viewModel.filterSearchText.collectAsStateWithLifecycle()
     val filterCat by viewModel.filterCategory.collectAsStateWithLifecycle()
     val expenseToDelete by viewModel.expenseToDelete.collectAsStateWithLifecycle()
+    val monthlyBudget by viewModel.budgetManager.monthlyBudget.collectAsStateWithLifecycle()
+    val savingsGoal by viewModel.budgetManager.savingsGoal.collectAsStateWithLifecycle()
+    val recurringExpenses by viewModel.recurringManager.recurringExpenses.collectAsStateWithLifecycle()
+    var showBudgetDialog by remember { mutableStateOf(false) }
+    var showRecurringDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -148,6 +153,76 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                 }
             }
 
+            // Budget & Savings
+            item {
+                val monthSpend = viewModel.monthlySpending()
+                GlassCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text("BUDGET & GOALS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.neonGreen, letterSpacing = 2.sp)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = { showBudgetDialog = true }, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.Settings, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+
+                    if (monthlyBudget > 0) {
+                        // Budget progress bar
+                        val budgetProgress = viewModel.budgetManager.budgetProgress(monthSpend)
+                        val exceeded = viewModel.budgetManager.isBudgetExceeded(monthSpend)
+                        val remaining = viewModel.budgetManager.budgetRemaining(monthSpend)
+                        val barColor = if (exceeded) VoxnColors.alertRed else if (budgetProgress > 0.8) VoxnColors.warningOrange else VoxnColors.neonGreen
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.AccountBalanceWallet, null, tint = barColor, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Monthly Budget", style = VoxnFont.cardBody, color = VoxnColors.textSecondary)
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Box(Modifier.fillMaxWidth().height(8.dp).background(VoxnColors.cardBackground, RoundedCornerShape(4.dp))) {
+                            Box(Modifier.fillMaxHeight().fillMaxWidth(budgetProgress.coerceAtMost(1.0).toFloat()).background(barColor, RoundedCornerShape(4.dp)))
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(
+                                viewModel.formatAmount(monthSpend) + " / " + viewModel.formatAmount(monthlyBudget),
+                                style = VoxnFont.mono(11, FontWeight.Medium), color = VoxnColors.textTertiary,
+                            )
+                            Text(
+                                if (exceeded) "Over by ${viewModel.formatAmount(monthSpend - monthlyBudget)}" else "${viewModel.formatAmount(remaining)} left",
+                                style = VoxnFont.mono(11, FontWeight.Bold), color = barColor,
+                            )
+                        }
+
+                        if (exceeded) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()
+                                .background(VoxnColors.alertRed.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(8.dp)) {
+                                Icon(Icons.Default.Warning, null, tint = VoxnColors.alertRed, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Budget exceeded!", style = VoxnFont.mono(11, FontWeight.Bold), color = VoxnColors.alertRed)
+                            }
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.AddCircle, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Tap the gear to set a monthly budget", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+                        }
+                    }
+
+                    if (savingsGoal > 0) {
+                        Spacer(Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Savings, null, tint = VoxnColors.cyan, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Savings Goal: ${viewModel.formatAmount(savingsGoal)}", style = VoxnFont.cardBody, color = VoxnColors.textSecondary)
+                        }
+                    }
+                }
+            }
+
             // Transaction Parser
             item {
                 GlassCard {
@@ -168,6 +243,51 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                         Spacer(Modifier.height(8.dp))
                         val isSuccess = result == "Transaction logged"
                         Text(result, style = VoxnFont.caption, color = if (isSuccess) VoxnColors.neonGreen else VoxnColors.warningOrange)
+                    }
+                }
+            }
+
+            // Recurring Expenses
+            item {
+                GlassCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text("RECURRING BILLS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.purple, letterSpacing = 2.sp)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = { showRecurringDialog = true }, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.AddCircle, null, tint = VoxnColors.purple, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    if (recurringExpenses.isEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("No recurring bills. Tap + to add.", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                        recurringExpenses.forEach { re ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(28.dp).background(re.category.color.copy(alpha = 0.2f), CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CategoryIcon(re.category)
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(re.name, style = VoxnFont.cardBody, color = VoxnColors.textPrimary)
+                                    Text("Day ${re.dayOfMonth} every month", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+                                }
+                                Text(viewModel.formatAmount(re.amount), style = VoxnFont.mono(12, FontWeight.Bold), color = VoxnColors.textSecondary)
+                                Spacer(Modifier.width(4.dp))
+                                IconButton(onClick = { viewModel.recurringManager.removeRecurringExpense(re.id) }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Close, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        val totalMonthly = recurringExpenses.sumOf { it.amount }
+                        Text("Total: ${viewModel.formatAmount(totalMonthly)}/mo", style = VoxnFont.mono(11, FontWeight.Bold), color = VoxnColors.purple)
                     }
                 }
             }
@@ -198,6 +318,71 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                                 }
                                 Spacer(Modifier.width(8.dp))
                                 Text(viewModel.formatAmount(amount), style = VoxnFont.mono(11, FontWeight.Medium), color = VoxnColors.textSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Spending Insights
+            item {
+                GlassCard {
+                    Text("SPENDING INSIGHTS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 2.sp)
+                    Spacer(Modifier.height(12.dp))
+
+                    // Week-over-week change
+                    val wowChange = viewModel.weekOverWeekChange()
+                    val avgDaily = viewModel.averageDailySpend()
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("WoW Change", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary)
+                            if (wowChange != null) {
+                                val isUp = wowChange > 0
+                                Text(
+                                    "${if (isUp) "+" else ""}${String.format("%.1f", wowChange)}%",
+                                    style = VoxnFont.mono(18, FontWeight.Bold),
+                                    color = if (isUp) VoxnColors.alertRed else VoxnColors.neonGreen,
+                                )
+                            } else {
+                                Text("—", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.textTertiary)
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Avg/Day", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary)
+                            Text(viewModel.formatAmount(avgDaily), style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.electricBlue)
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // 14-day bar chart
+                    Text("LAST 14 DAYS", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary, letterSpacing = 1.sp)
+                    Spacer(Modifier.height(8.dp))
+                    val dailyData = viewModel.dailySpendingLast14Days()
+                    val maxDaily = dailyData.maxOfOrNull { it.second } ?: 1.0
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        dailyData.forEach { (label, amount) ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Bottom,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                val height = if (maxDaily > 0 && amount > 0) (amount / maxDaily * 70).dp else 2.dp
+                                Box(
+                                    Modifier.width(10.dp).height(height)
+                                        .background(
+                                            Brush.verticalGradient(listOf(VoxnColors.electricBlue, VoxnColors.electricBlue.copy(alpha = 0.3f))),
+                                            RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
+                                        )
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(label, style = VoxnFont.mono(7, FontWeight.Normal), color = VoxnColors.textTertiary)
                             }
                         }
                     }
@@ -353,6 +538,196 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
             },
             containerColor = VoxnColors.backgroundMid,
         )
+    }
+
+    if (showBudgetDialog) {
+        BudgetSetupDialog(
+            currentBudget = monthlyBudget,
+            currentSavingsGoal = savingsGoal,
+            onSave = { budget, savings ->
+                viewModel.budgetManager.setMonthlyBudget(budget)
+                viewModel.budgetManager.setSavingsGoal(savings)
+                showBudgetDialog = false
+            },
+            onDismiss = { showBudgetDialog = false },
+        )
+    }
+
+    if (showRecurringDialog) {
+        AddRecurringExpenseDialog(
+            onAdd = { name, amount, category, day ->
+                viewModel.recurringManager.addRecurringExpense(name, amount, category, day)
+                showRecurringDialog = false
+            },
+            onDismiss = { showRecurringDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun BudgetSetupDialog(
+    currentBudget: Double,
+    currentSavingsGoal: Double,
+    onSave: (Double, Double) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var budgetText by remember { mutableStateOf(if (currentBudget > 0) currentBudget.toLong().toString() else "") }
+    var savingsText by remember { mutableStateOf(if (currentSavingsGoal > 0) currentSavingsGoal.toLong().toString() else "") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = VoxnColors.backgroundMid,
+            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.neonGreen.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("BUDGET & GOALS", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.neonGreen, letterSpacing = 3.sp)
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = budgetText,
+                    onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,8}$"))) budgetText = it },
+                    label = { Text("Monthly Budget (₹)", color = VoxnColors.textTertiary) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.neonGreen, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.neonGreen),
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = savingsText,
+                    onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,8}$"))) savingsText = it },
+                    label = { Text("Monthly Savings Goal (₹)", color = VoxnColors.textTertiary) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.neonGreen, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.neonGreen),
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("Set to 0 or leave empty to disable", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+
+                Spacer(Modifier.height(24.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1)
+                    }
+                    Button(
+                        onClick = {
+                            onSave(
+                                budgetText.toDoubleOrNull() ?: 0.0,
+                                savingsText.toDoubleOrNull() ?: 0.0,
+                            )
+                        },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.neonGreen),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("SAVE", style = VoxnFont.mono(13, FontWeight.Bold), color = VoxnColors.backgroundDark, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddRecurringExpenseDialog(
+    onAdd: (String, Double, ExpenseCategory, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf(ExpenseCategory.Bills) }
+    var dayOfMonth by remember { mutableStateOf("1") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = VoxnColors.backgroundMid,
+            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.purple.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("ADD RECURRING BILL", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.purple, letterSpacing = 3.sp)
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Bill name (e.g., Netflix)", color = VoxnColors.textTertiary) },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.purple, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.purple),
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d{0,2}$"))) amount = it },
+                    label = { Text("Amount (₹)", color = VoxnColors.textTertiary) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.purple, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.purple),
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = dayOfMonth,
+                    onValueChange = { v -> if (v.isEmpty() || (v.toIntOrNull()?.let { it in 1..31 } == true)) dayOfMonth = v },
+                    label = { Text("Day of month (1-31)", color = VoxnColors.textTertiary) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.purple, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.purple),
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                Text("CATEGORY", style = VoxnFont.mono(12, FontWeight.Medium), color = VoxnColors.textSecondary)
+                Spacer(Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(ExpenseCategory.entries.toList()) { cat ->
+                        val selected = category == cat
+                        Box(
+                            modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                .background(if (selected) cat.color.copy(alpha = 0.2f) else VoxnColors.cardBackground)
+                                .border(1.dp, if (selected) cat.color else Color.Transparent, RoundedCornerShape(8.dp))
+                                .clickable { category = cat }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            Text(cat.displayName, style = VoxnFont.mono(10, FontWeight.Medium), color = if (selected) cat.color else VoxnColors.textTertiary)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp),
+                    ) { Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1) }
+                    Button(
+                        onClick = {
+                            val amt = amount.toDoubleOrNull() ?: return@Button
+                            val day = dayOfMonth.toIntOrNull() ?: return@Button
+                            onAdd(name, amt, category, day)
+                        },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.purple),
+                        enabled = name.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) > 0 && (dayOfMonth.toIntOrNull() ?: 0) in 1..31,
+                        shape = RoundedCornerShape(12.dp),
+                    ) { Text("ADD", style = VoxnFont.mono(13, FontWeight.Bold), maxLines = 1) }
+                }
+            }
+        }
     }
 }
 
