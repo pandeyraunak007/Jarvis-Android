@@ -34,7 +34,9 @@ class HabitViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            manager.addHabit(name, reminderEnabled, hour, minute, frequencyRaw, targetCount, weeklyDaysRaw)
+            try {
+                manager.addHabit(name, reminderEnabled, hour, minute, frequencyRaw, targetCount, weeklyDaysRaw)
+            } catch (_: Exception) { }
             _showAddDialog.value = false
         }
     }

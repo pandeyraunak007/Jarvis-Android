@@ -59,11 +59,15 @@ class NoteViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         if (title.isBlank()) return
         viewModelScope.launch {
-            val editing = editingNote.value
-            if (editing != null) {
-                manager.updateNote(editing, title, body, category, priority, dueDate, reminderDate)
-            } else {
-                manager.addNote(title, body, category, priority, dueDate, reminderDate)
+            try {
+                val editing = editingNote.value
+                if (editing != null) {
+                    manager.updateNote(editing, title, body, category, priority, dueDate, reminderDate)
+                } else {
+                    manager.addNote(title, body, category, priority, dueDate, reminderDate)
+                }
+            } catch (_: Exception) {
+                // Prevent crash on DB errors
             }
             _showAddDialog.value = false
             _editingNote.value = null

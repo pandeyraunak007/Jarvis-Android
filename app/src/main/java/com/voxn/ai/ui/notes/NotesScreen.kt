@@ -220,15 +220,18 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
     val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
-    GlassCard(
-        modifier = Modifier.then(
-            Modifier.border(
-                width = 2.dp,
-                color = note.priority.color.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp, topEnd = 0.dp, bottomEnd = 0.dp)
-            )
+    GlassCard {
+        // Priority indicator bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .background(
+                    note.priority.color.copy(alpha = 0.6f),
+                    RoundedCornerShape(2.dp),
+                )
         )
-    ) {
+        Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
