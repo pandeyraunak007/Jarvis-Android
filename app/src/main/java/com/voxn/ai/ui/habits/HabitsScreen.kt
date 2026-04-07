@@ -41,6 +41,7 @@ fun HabitsScreen(viewModel: HabitViewModel = viewModel()) {
     val habits by viewModel.habits.collectAsStateWithLifecycle()
     val showAddDialog by viewModel.showAddDialog.collectAsStateWithLifecycle()
     val selectedMonth by viewModel.selectedMonth.collectAsStateWithLifecycle()
+    val habitToDelete by viewModel.habitToDelete.collectAsStateWithLifecycle()
 
     val completed = habits.count { it.isCompletedToday() }
     val total = habits.size
@@ -129,6 +130,26 @@ fun HabitsScreen(viewModel: HabitViewModel = viewModel()) {
     if (showAddDialog) {
         AddHabitDialog(viewModel)
     }
+
+    habitToDelete?.let { habit ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDelete() },
+            title = { Text("Delete Habit", style = VoxnFont.cardTitle, color = VoxnColors.textPrimary) },
+            text = { Text("Delete \"${habit.name}\"? This will remove all completion history and cannot be undone.", style = VoxnFont.cardBody, color = VoxnColors.textSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmDeleteHabit() },
+                    colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.alertRed),
+                ) { Text("Delete", style = VoxnFont.mono(13, FontWeight.Bold)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDelete() }) {
+                    Text("Cancel", color = VoxnColors.textTertiary)
+                }
+            },
+            containerColor = VoxnColors.backgroundMid,
+        )
+    }
 }
 
 @Composable
@@ -173,7 +194,7 @@ private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: Habi
                 Spacer(Modifier.width(8.dp))
             }
 
-            IconButton(onClick = { viewModel.deleteHabit(habitWithCompletions.habit) }, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = { viewModel.requestDeleteHabit(habitWithCompletions.habit) }, modifier = Modifier.size(24.dp)) {
                 Icon(Icons.Default.Close, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
             }
         }

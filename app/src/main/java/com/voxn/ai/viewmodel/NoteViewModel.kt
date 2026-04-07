@@ -31,6 +31,9 @@ class NoteViewModel(app: Application) : AndroidViewModel(app) {
     private val _editingNote = MutableStateFlow<NoteEntity?>(null)
     val editingNote: StateFlow<NoteEntity?> = _editingNote
 
+    private val _noteToDelete = MutableStateFlow<NoteEntity?>(null)
+    val noteToDelete: StateFlow<NoteEntity?> = _noteToDelete
+
     fun showAdd() { _editingNote.value = null; _showAddDialog.value = true }
     fun hideAdd() { _showAddDialog.value = false; _editingNote.value = null }
     fun startEditing(note: NoteEntity) { _editingNote.value = note; _showAddDialog.value = true }
@@ -69,7 +72,13 @@ class NoteViewModel(app: Application) : AndroidViewModel(app) {
 
     fun togglePin(note: NoteEntity) { viewModelScope.launch { manager.togglePin(note) } }
     fun toggleComplete(note: NoteEntity) { viewModelScope.launch { manager.toggleComplete(note) } }
-    fun deleteNote(note: NoteEntity) { viewModelScope.launch { manager.deleteNote(note) } }
+    fun requestDeleteNote(note: NoteEntity) { _noteToDelete.value = note }
+    fun cancelDelete() { _noteToDelete.value = null }
+    fun confirmDeleteNote() {
+        val note = _noteToDelete.value ?: return
+        viewModelScope.launch { manager.deleteNote(note) }
+        _noteToDelete.value = null
+    }
 
     val activeCount: Int get() = notes.value.count { !it.isCompleted }
     val overdueCount: Int get() = notes.value.count { it.isOverdue }

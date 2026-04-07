@@ -19,6 +19,9 @@ class HabitViewModel(app: Application) : AndroidViewModel(app) {
     private val _showAddDialog = MutableStateFlow(false)
     val showAddDialog: StateFlow<Boolean> = _showAddDialog
 
+    private val _habitToDelete = MutableStateFlow<HabitEntity?>(null)
+    val habitToDelete: StateFlow<HabitEntity?> = _habitToDelete
+
     private val _selectedMonth = MutableStateFlow(Calendar.getInstance())
     val selectedMonth: StateFlow<Calendar> = _selectedMonth
 
@@ -37,8 +40,12 @@ class HabitViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { manager.toggleCompletion(habit) }
     }
 
-    fun deleteHabit(habit: HabitEntity) {
+    fun requestDeleteHabit(habit: HabitEntity) { _habitToDelete.value = habit }
+    fun cancelDelete() { _habitToDelete.value = null }
+    fun confirmDeleteHabit() {
+        val habit = _habitToDelete.value ?: return
         viewModelScope.launch { manager.deleteHabit(habit) }
+        _habitToDelete.value = null
     }
 
     fun updateReminder(habit: HabitEntity, enabled: Boolean, hour: Int, minute: Int) {

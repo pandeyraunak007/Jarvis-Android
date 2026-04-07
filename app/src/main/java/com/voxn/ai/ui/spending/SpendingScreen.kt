@@ -2,6 +2,8 @@ package com.voxn.ai.ui.spending
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -51,6 +53,7 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
     val showCustomPicker by viewModel.showCustomDatePicker.collectAsStateWithLifecycle()
     val filterSearch by viewModel.filterSearchText.collectAsStateWithLifecycle()
     val filterCat by viewModel.filterCategory.collectAsStateWithLifecycle()
+    val expenseToDelete by viewModel.expenseToDelete.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -331,6 +334,26 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
     if (showAddDialog) { AddExpenseDialog(viewModel) }
     if (showParseSheet) { ParseDialog(viewModel) }
     if (showCustomPicker) { CustomDateRangeDialog(viewModel) }
+
+    expenseToDelete?.let { expense ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDelete() },
+            title = { Text("Delete Transaction", style = VoxnFont.cardTitle, color = VoxnColors.textPrimary) },
+            text = { Text("Delete ${expense.formattedAmount} at ${expense.merchant}?", style = VoxnFont.cardBody, color = VoxnColors.textSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmDeleteExpense() },
+                    colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.alertRed),
+                ) { Text("Delete", style = VoxnFont.mono(13, FontWeight.Bold)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDelete() }) {
+                    Text("Cancel", color = VoxnColors.textTertiary)
+                }
+            },
+            containerColor = VoxnColors.backgroundMid,
+        )
+    }
 }
 
 @Composable
@@ -366,10 +389,11 @@ private fun FilterChipItem(label: String, isActive: Boolean, color: Color, onCli
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ExpenseRow(expense: ExpenseEntity, viewModel: SpendingViewModel) {
     val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
-    GlassCard {
+    GlassCard(modifier = Modifier.combinedClickable(onClick = {}, onLongClick = { viewModel.requestDeleteExpense(expense) })) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(36.dp).background(expense.category.color.copy(alpha = 0.2f), CircleShape),
@@ -525,7 +549,12 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = amount, onValueChange = { amount = it },
+                    value = amount,
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
+                            amount = newValue
+                        }
+                    },
                     label = { Text("Amount (₹)", color = VoxnColors.textTertiary) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.warningOrange, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.warningOrange),

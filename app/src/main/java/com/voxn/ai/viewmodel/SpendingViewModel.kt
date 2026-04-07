@@ -242,9 +242,22 @@ class SpendingViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun deleteExpense(expense: ExpenseEntity) {
+    private val _expenseToDelete = MutableStateFlow<ExpenseEntity?>(null)
+    val expenseToDelete: StateFlow<ExpenseEntity?> = _expenseToDelete
+
+    fun requestDeleteExpense(expense: ExpenseEntity) { _expenseToDelete.value = expense }
+    fun cancelDelete() { _expenseToDelete.value = null }
+    fun confirmDeleteExpense() {
+        val expense = _expenseToDelete.value ?: return
         viewModelScope.launch { parser.deleteExpense(expense) }
+        _expenseToDelete.value = null
     }
 
-    fun formatAmount(amount: Double): String = "₹${DecimalFormat("#,###").format(amount.toLong())}"
+    fun formatAmount(amount: Double): String {
+        return if (amount == amount.toLong().toDouble()) {
+            "₹${DecimalFormat("#,##0").format(amount.toLong())}"
+        } else {
+            "₹${DecimalFormat("#,##0.##").format(amount)}"
+        }
+    }
 }

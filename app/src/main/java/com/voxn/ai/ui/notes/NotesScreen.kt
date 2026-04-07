@@ -46,6 +46,7 @@ fun NotesScreen(viewModel: NoteViewModel = viewModel()) {
     val filterCategory by viewModel.filterCategory.collectAsStateWithLifecycle()
     val filterPriority by viewModel.filterPriority.collectAsStateWithLifecycle()
 
+    val noteToDelete by viewModel.noteToDelete.collectAsStateWithLifecycle()
     val filteredNotes = viewModel.filteredNotes()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -182,6 +183,26 @@ fun NotesScreen(viewModel: NoteViewModel = viewModel()) {
     }
 
     if (showAddDialog) { AddEditNoteDialog(viewModel) }
+
+    noteToDelete?.let { note ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDelete() },
+            title = { Text("Delete Note", style = VoxnFont.cardTitle, color = VoxnColors.textPrimary) },
+            text = { Text("Delete \"${note.title}\"? This cannot be undone.", style = VoxnFont.cardBody, color = VoxnColors.textSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.confirmDeleteNote() },
+                    colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.alertRed),
+                ) { Text("Delete", style = VoxnFont.mono(13, FontWeight.Bold)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDelete() }) {
+                    Text("Cancel", color = VoxnColors.textTertiary)
+                }
+            },
+            containerColor = VoxnColors.backgroundMid,
+        )
+    }
 }
 
 @Composable
@@ -274,7 +295,7 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
                 IconButton(onClick = { viewModel.startEditing(note) }, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.Edit, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(18.dp))
                 }
-                IconButton(onClick = { viewModel.deleteNote(note) }, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { viewModel.requestDeleteNote(note) }, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.Delete, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
                 }
             }
