@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import com.voxn.ai.data.database.entity.NoteEntity
+import com.voxn.ai.util.HapticFeedback
 import com.voxn.ai.data.model.NoteCategory
 import com.voxn.ai.data.model.NotePriority
 import com.voxn.ai.theme.VoxnColors
@@ -215,6 +217,7 @@ private fun StatBadge(label: String, count: Int, color: Color) {
 
 @Composable
 private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
+    val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
     GlassCard(
@@ -276,7 +279,7 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
 
             // Action buttons
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = { viewModel.toggleComplete(note) }, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { HapticFeedback.success(context); viewModel.toggleComplete(note) }, modifier = Modifier.size(36.dp)) {
                     Icon(
                         if (note.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                         null,

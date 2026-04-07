@@ -40,6 +40,19 @@
             android:exported="false" />
 
         <receiver
+            android:name=".util.AutoLogReceiver"
+            android:exported="false" />
+
+        <service
+            android:name=".util.TransactionNotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <receiver
             android:name=".util.BootReceiver"
             android:exported="false">
             <intent-filter>

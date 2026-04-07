@@ -80,6 +80,22 @@ class DashboardViewModel(app: Application) : AndroidViewModel(app) {
         return "₹${DecimalFormat("#,###").format(amount.toLong())}"
     }
 
+    /** Returns % change vs last month (null if no last month data) */
+    fun monthOverMonthChange(expenses: List<ExpenseEntity>): Double? {
+        val thisMonthStart = ExpenseParser.monthStart()
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        cal.add(Calendar.MONTH, -1)
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+        val lastMonthStart = cal.timeInMillis
+
+        val thisMonth = expenses.filter { it.date >= thisMonthStart }.sumOf { it.amount }
+        val lastMonth = expenses.filter { it.date in lastMonthStart until thisMonthStart }.sumOf { it.amount }
+
+        if (lastMonth == 0.0) return null
+        return ((thisMonth - lastMonth) / lastMonth) * 100
+    }
+
     fun categoryBreakdown(expenses: List<ExpenseEntity>): List<Pair<ExpenseCategory, Double>> {
         val month = ExpenseParser.monthStart()
         return expenses.filter { it.date >= month }

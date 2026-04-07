@@ -369,6 +369,31 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                 SpendingStat("WEEK", viewModel.weeklySpending(expenses), VoxnColors.electricBlue)
                 SpendingStat("MONTH", viewModel.monthlySpending(expenses), VoxnColors.cyan)
             }
+
+            // Month-over-month trend
+            val momChange = viewModel.monthOverMonthChange(expenses)
+            if (momChange != null) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val isUp = momChange > 0
+                    Icon(
+                        if (isUp) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                        null,
+                        tint = if (isUp) VoxnColors.alertRed else VoxnColors.neonGreen,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "${if (isUp) "+" else ""}${String.format("%.0f", momChange)}% vs last month",
+                        style = VoxnFont.mono(10, FontWeight.Medium),
+                        color = if (isUp) VoxnColors.alertRed else VoxnColors.neonGreen,
+                    )
+                }
+            }
             // Budget progress
             if (monthlyBudget > 0) {
                 Spacer(Modifier.height(12.dp))

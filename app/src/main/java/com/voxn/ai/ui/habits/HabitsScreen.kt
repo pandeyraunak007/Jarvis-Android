@@ -27,7 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import com.voxn.ai.data.database.entity.HabitFrequency
+import com.voxn.ai.util.HapticFeedback
 import com.voxn.ai.data.database.entity.HabitWithCompletions
 import com.voxn.ai.theme.VoxnColors
 import com.voxn.ai.theme.VoxnFont
@@ -155,6 +157,7 @@ fun HabitsScreen(viewModel: HabitViewModel = viewModel()) {
 
 @Composable
 private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: HabitViewModel) {
+    val context = LocalContext.current
     val isCompleted = habitWithCompletions.isCompletedToday()
     val isDue = habitWithCompletions.isDueToday()
     val streak = habitWithCompletions.currentStreak()
@@ -172,12 +175,12 @@ private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: Habi
                     )
                 }
                 Spacer(Modifier.width(4.dp))
-                IconButton(onClick = { viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(28.dp)) {
+                IconButton(onClick = { HapticFeedback.click(context); viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Default.Add, null, tint = VoxnColors.neonGreen, modifier = Modifier.size(18.dp))
                 }
             } else {
                 // Checkbox for daily/weekly
-                IconButton(onClick = { viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = { HapticFeedback.click(context); viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(32.dp)) {
                     Icon(
                         if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                         null,

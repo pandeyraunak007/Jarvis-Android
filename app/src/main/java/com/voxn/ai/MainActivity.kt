@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.voxn.ai.manager.BiometricLockManager
+import com.voxn.ai.util.HapticFeedback
 import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.UserProfileManager
 import com.voxn.ai.theme.VoxnColors
@@ -166,6 +167,7 @@ private fun MainScreen() {
     }
     var selectedTab by remember { mutableIntStateOf(0) }
 
+    val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize().background(VoxnColors.backgroundDark)) {
         // Content
         when (selectedTab) {
@@ -204,7 +206,7 @@ private fun MainScreen() {
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { selectedTab = index }
+                        .clickable { HapticFeedback.tick(context); selectedTab = index }
                         .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
