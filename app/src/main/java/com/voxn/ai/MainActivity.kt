@@ -21,9 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.voxn.ai.manager.BudgetManager
+import com.voxn.ai.manager.UserProfileManager
 import com.voxn.ai.theme.VoxnColors
 import com.voxn.ai.theme.VoxnFont
 import com.voxn.ai.theme.VoxnTheme
@@ -31,6 +34,7 @@ import com.voxn.ai.ui.dashboard.DashboardScreen
 import com.voxn.ai.ui.habits.HabitsScreen
 import com.voxn.ai.ui.health.HealthScreen
 import com.voxn.ai.ui.notes.NotesScreen
+import com.voxn.ai.ui.onboarding.OnboardingScreen
 import com.voxn.ai.ui.spending.SpendingScreen
 
 class MainActivity : ComponentActivity() {
@@ -46,16 +50,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        requestNotificationPermission()
-        requestCalendarPermission()
         setContent {
             VoxnTheme {
-                MainScreen()
+                AppRoot()
             }
         }
     }
 
-    private fun requestNotificationPermission() {
+    private fun requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED
@@ -63,14 +65,29 @@ class MainActivity : ComponentActivity() {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-    }
-
-    private fun requestCalendarPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
             != PackageManager.PERMISSION_GRANTED
         ) {
             calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
         }
+    }
+}
+
+@Composable
+private fun AppRoot() {
+    val context = LocalContext.current
+    val profileManager = remember { UserProfileManager(context) }
+    val budgetManager = remember { BudgetManager(context) }
+    val onboardingComplete by profileManager.onboardingComplete.collectAsState()
+
+    if (!onboardingComplete) {
+        OnboardingScreen(
+            profileManager = profileManager,
+            budgetManager = budgetManager,
+            onComplete = { /* state updates automatically via StateFlow */ },
+        )
+    } else {
+        MainScreen()
     }
 }
 

@@ -29,6 +29,7 @@ import com.voxn.ai.theme.VoxnFont
 import com.voxn.ai.ui.components.ArcGauge
 import com.voxn.ai.ui.components.GlassCard
 import com.voxn.ai.ui.components.ProgressRing
+import com.voxn.ai.ui.profile.ProfileScreen
 import com.voxn.ai.viewmodel.DashboardViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -41,6 +42,12 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
     val habits by viewModel.habits.collectAsStateWithLifecycle()
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val notes by viewModel.notes.collectAsStateWithLifecycle()
+    var showProfile by remember { mutableStateOf(false) }
+
+    if (showProfile) {
+        ProfileScreen(onDismiss = { showProfile = false })
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -56,12 +63,15 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Header
-        Text(
-            text = "V.O.X.N.",
-            style = VoxnFont.mono(28, FontWeight.Bold),
-            color = VoxnColors.electricBlue,
-            letterSpacing = 4.sp,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.size(40.dp))
+            Spacer(Modifier.weight(1f))
+            Text("V.O.X.N.", style = VoxnFont.mono(28, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 4.sp)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = { showProfile = true }, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Default.Person, "Profile", tint = VoxnColors.electricBlue, modifier = Modifier.size(24.dp))
+            }
+        }
         Spacer(Modifier.height(4.dp))
         Text(
             text = viewModel.greeting,

@@ -12,6 +12,7 @@ import com.voxn.ai.data.model.HealthData
 import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.CalendarManager
 import com.voxn.ai.manager.ExpenseParser
+import com.voxn.ai.manager.UserProfileManager
 import com.voxn.ai.manager.HabitManager
 import com.voxn.ai.manager.HealthConnectManager
 import com.voxn.ai.manager.NoteManager
@@ -32,6 +33,7 @@ class DashboardViewModel(app: Application) : AndroidViewModel(app) {
     private val noteManager = NoteManager(app)
     val budgetManager = BudgetManager(app)
     val calendarManager = CalendarManager(app)
+    private val profileManager = UserProfileManager(app)
 
     val healthData: StateFlow<HealthData> = healthManager.healthData
 
@@ -47,11 +49,13 @@ class DashboardViewModel(app: Application) : AndroidViewModel(app) {
     val greeting: String
         get() {
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val name = profileManager.userName.value
+            val suffix = if (name.isNotBlank()) ", $name" else ""
             return when {
-                hour in 5..11 -> "Good Morning"
-                hour in 12..16 -> "Good Afternoon"
-                hour in 17..20 -> "Good Evening"
-                else -> "Good Night"
+                hour in 5..11 -> "Good Morning$suffix"
+                hour in 12..16 -> "Good Afternoon$suffix"
+                hour in 17..20 -> "Good Evening$suffix"
+                else -> "Good Night$suffix"
             }
         }
 

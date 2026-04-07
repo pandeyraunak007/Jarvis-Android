@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voxn AI</string>
+    <string name="spend_widget_name">Voxn Spend</string>
+    <string name="habit_widget_name">Voxn Habits</string>
+    <string name="dashboard_widget_name">Voxn Dashboard</string>
+</resources>
