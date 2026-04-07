@@ -15,6 +15,7 @@ class HealthViewModel(app: Application) : AndroidViewModel(app) {
     val healthData: StateFlow<HealthData> = manager.healthData
     val weeklyEntries: StateFlow<List<DailyHealthEntry>> = manager.weeklyEntries
     val isAvailable: StateFlow<Boolean> = manager.isAvailable
+    val isLoading: StateFlow<Boolean> = manager.isLoading
     val errorMessage: StateFlow<String?> = manager.errorMessage
     val permissions = manager.permissions
 

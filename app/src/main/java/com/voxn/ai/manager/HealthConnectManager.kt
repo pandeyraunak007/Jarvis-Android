@@ -24,6 +24,9 @@ class HealthConnectManager(private val context: Context) {
     private val _isAvailable = MutableStateFlow(false)
     val isAvailable: StateFlow<Boolean> = _isAvailable
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
@@ -49,6 +52,7 @@ class HealthConnectManager(private val context: Context) {
     suspend fun fetchAllData() {
         val client = getClient() ?: return
         try {
+            _isLoading.value = true
             _errorMessage.value = null
 
             val today = LocalDate.now()
@@ -83,6 +87,8 @@ class HealthConnectManager(private val context: Context) {
             fetchWeeklyEntries(client)
         } catch (e: Exception) {
             _errorMessage.value = "Unable to read health data. Check Health Connect permissions."
+        } finally {
+            _isLoading.value = false
         }
     }
 

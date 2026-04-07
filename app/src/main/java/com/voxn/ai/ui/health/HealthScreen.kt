@@ -29,6 +29,7 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
     val healthData by viewModel.healthData.collectAsStateWithLifecycle()
     val weeklyEntries by viewModel.weeklyEntries.collectAsStateWithLifecycle()
     val isAvailable by viewModel.isAvailable.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -40,8 +41,7 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
         }
     }
 
-    Box {
-    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,6 +53,14 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
     ) {
         Text("HEALTH SYSTEMS", style = VoxnFont.mono(22, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 3.sp)
         Spacer(Modifier.height(24.dp))
+
+        if (isLoading) {
+            Spacer(Modifier.height(32.dp))
+            CircularProgressIndicator(color = VoxnColors.electricBlue, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+            Spacer(Modifier.height(12.dp))
+            Text("Fetching health data...", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+            Spacer(Modifier.height(32.dp))
+        }
 
         if (!isAvailable) {
             // Authorization prompt
@@ -96,7 +104,7 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
             GlassCard {
                 Text("DETAILED READOUTS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 2.sp)
                 Spacer(Modifier.height(12.dp))
-                HealthReadout(Icons.Default.DirectionsWalk, "Steps", healthData.stepsFormatted, "Avg: ${healthData.weeklySteps.toLong()}/day", VoxnColors.electricBlue)
+                @Suppress("DEPRECATION") HealthReadout(Icons.Default.DirectionsWalk, "Steps", healthData.stepsFormatted, "Avg: ${healthData.weeklySteps.toLong()}/day", VoxnColors.electricBlue)
                 HealthReadout(Icons.Default.LocalFireDepartment, "Calories", healthData.caloriesFormatted, "Avg: ${healthData.weeklyCalories.toLong()} kcal/day", VoxnColors.warningOrange)
                 HealthReadout(Icons.Default.Bedtime, "Sleep", healthData.sleepFormatted, "Goal: 8h", VoxnColors.cyan)
                 HealthReadout(Icons.Default.FitnessCenter, "Workout", healthData.workoutFormatted, "Goal: 60 min", VoxnColors.neonGreen)
@@ -139,6 +147,10 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp),
+    )
     } // end Box
 }
 

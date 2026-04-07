@@ -423,7 +423,7 @@ private fun CategoryIcon(category: ExpenseCategory) {
         ExpenseCategory.Bills -> Icons.Default.Description
         ExpenseCategory.Entertainment -> Icons.Default.SportsEsports
         ExpenseCategory.Health -> Icons.Default.Favorite
-        ExpenseCategory.Education -> Icons.Default.MenuBook
+        ExpenseCategory.Education -> Icons.Default.School
         ExpenseCategory.Other -> Icons.Default.MoreHoriz
     }
     Icon(icon, null, tint = category.color, modifier = Modifier.size(18.dp))
