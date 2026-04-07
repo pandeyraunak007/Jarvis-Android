@@ -164,6 +164,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         exporting = false
                     }
                 },
+                modifier = Modifier.height(44.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.warningOrange.copy(alpha = 0.2f)),
                 shape = RoundedCornerShape(8.dp),
                 enabled = !exporting,
@@ -174,7 +175,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                     Icon(Icons.Default.Share, null, tint = VoxnColors.warningOrange, modifier = Modifier.size(18.dp))
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(if (exporting) "EXPORTING..." else "EXPORT ALL DATA", style = VoxnFont.mono(12, FontWeight.Bold), color = VoxnColors.warningOrange)
+                Text(if (exporting) "EXPORTING..." else "EXPORT ALL DATA", style = VoxnFont.mono(12, FontWeight.Bold), color = VoxnColors.warningOrange, maxLines = 1)
             }
         }
 
@@ -226,7 +227,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
             shape = RoundedCornerShape(14.dp),
         ) {
-            Text("SAVE CHANGES", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.backgroundDark, letterSpacing = 2.sp)
+            Text("SAVE CHANGES", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.backgroundDark, letterSpacing = 2.sp, maxLines = 1)
         }
     }
 }

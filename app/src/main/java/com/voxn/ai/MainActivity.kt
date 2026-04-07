@@ -220,6 +220,7 @@ private fun MainScreen() {
                         tab.label,
                         style = VoxnFont.mono(9, FontWeight.Medium),
                         color = color,
+                        maxLines = 1,
                     )
                     Spacer(Modifier.height(2.dp))
                     // Active indicator

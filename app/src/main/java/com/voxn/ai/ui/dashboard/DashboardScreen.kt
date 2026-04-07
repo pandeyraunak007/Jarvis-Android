@@ -232,7 +232,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             Text(event.title, style = VoxnFont.caption, color = VoxnColors.textSecondary, maxLines = 1)
-                            Text(event.timeRange, style = VoxnFont.mono(9, FontWeight.Normal), color = VoxnColors.textTertiary)
+                            Text(event.timeRange, style = VoxnFont.mono(9, FontWeight.Normal), color = VoxnColors.textTertiary, maxLines = 1)
                         }
                         if (event.isOngoing) {
                             Text("NOW", style = VoxnFont.mono(9, FontWeight.Bold), color = VoxnColors.neonGreen)
@@ -424,7 +424,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(cat.displayName, style = VoxnFont.caption, color = cat.color, modifier = Modifier.width(80.dp))
+                        Text(cat.displayName, style = VoxnFont.caption, color = cat.color, modifier = Modifier.widthIn(min = 60.dp, max = 90.dp), maxLines = 1)
                         Box(
                             Modifier.weight(1f).height(6.dp)
                                 .background(VoxnColors.cardBackground, MaterialTheme.shapes.small)

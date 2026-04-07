@@ -333,7 +333,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
             shape = RoundedCornerShape(16.dp),
             color = VoxnColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.cyan.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
@@ -374,7 +374,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(cat.displayName, style = VoxnFont.mono(12, FontWeight.Medium), color = if (selected) cat.color else VoxnColors.textTertiary)
+                            Text(cat.displayName, style = VoxnFont.mono(12, FontWeight.Medium), color = if (selected) cat.color else VoxnColors.textTertiary, maxLines = 1)
                         }
                     }
                 }
@@ -395,7 +395,7 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(pri.displayName, style = VoxnFont.mono(12, FontWeight.Medium), color = if (selected) pri.color else VoxnColors.textTertiary)
+                            Text(pri.displayName, style = VoxnFont.mono(12, FontWeight.Medium), color = if (selected) pri.color else VoxnColors.textTertiary, maxLines = 1)
                         }
                     }
                 }

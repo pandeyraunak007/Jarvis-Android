@@ -937,7 +937,7 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
             shape = RoundedCornerShape(16.dp),
             color = VoxnColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.warningOrange.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp),
         ) {
             Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
                 Text("LOG EXPENSE", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.warningOrange, letterSpacing = 3.sp)
@@ -1037,7 +1037,7 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                         border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("Cancel", style = VoxnFont.mono(14, FontWeight.Medium))
+                        Text("Cancel", style = VoxnFont.mono(14, FontWeight.Medium), maxLines = 1)
                     }
                     Button(
                         onClick = { amount.toDoubleOrNull()?.let { viewModel.addExpense(it, merchant, category, paymentMethod, selectedDate) } },
@@ -1046,7 +1046,7 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                         enabled = amount.toDoubleOrNull() != null && amount.toDoubleOrNull()!! > 0,
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Text("LOG", style = VoxnFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
+                        Text("LOG", style = VoxnFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp, maxLines = 1)
                     }
                 }
             }

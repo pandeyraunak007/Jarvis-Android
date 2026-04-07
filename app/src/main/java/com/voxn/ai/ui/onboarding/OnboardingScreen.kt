@@ -315,7 +315,7 @@ private fun PermissionRow(
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = VoxnFont.cardTitle, color = VoxnColors.textPrimary)
-            Text(note ?: description, style = VoxnFont.caption, color = VoxnColors.textTertiary)
+            Text(note ?: description, style = VoxnFont.caption, color = VoxnColors.textTertiary, maxLines = 2)
         }
         if (granted) {
             Icon(Icons.Default.CheckCircle, null, tint = VoxnColors.neonGreen, modifier = Modifier.size(24.dp))

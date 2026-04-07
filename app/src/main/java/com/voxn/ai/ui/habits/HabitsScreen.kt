@@ -376,7 +376,7 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(freq.label, style = VoxnFont.mono(10, FontWeight.Medium), color = if (selected) VoxnColors.neonGreen else VoxnColors.textTertiary)
+                            Text(freq.label, style = VoxnFont.mono(10, FontWeight.Medium), color = if (selected) VoxnColors.neonGreen else VoxnColors.textTertiary, maxLines = 1)
                         }
                     }
                 }
