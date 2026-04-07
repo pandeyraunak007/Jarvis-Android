@@ -299,6 +299,26 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                     GlassCard {
                         Text("CATEGORY ANALYSIS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.warningOrange, letterSpacing = 2.sp)
                         Spacer(Modifier.height(12.dp))
+
+                        // Donut chart
+                        val totalSpend = breakdown.sumOf { it.second }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            com.voxn.ai.ui.components.DonutChart(
+                                slices = breakdown.map { (cat, amount) ->
+                                    com.voxn.ai.ui.components.DonutSlice(cat.displayName, amount, cat.color)
+                                },
+                                centerText = viewModel.formatAmount(totalSpend),
+                                centerSubText = "Total",
+                                size = 140.dp,
+                                strokeWidth = 16.dp,
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
+
+                        // Legend bars
                         val maxAmount = breakdown.maxOf { it.second }
                         breakdown.forEach { (cat, amount) ->
                             Row(

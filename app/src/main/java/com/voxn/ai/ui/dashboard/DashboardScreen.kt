@@ -30,6 +30,7 @@ import com.voxn.ai.ui.components.ArcGauge
 import com.voxn.ai.ui.components.GlassCard
 import com.voxn.ai.ui.components.ProgressRing
 import com.voxn.ai.ui.profile.ProfileScreen
+import com.voxn.ai.ui.search.GlobalSearchSheet
 import com.voxn.ai.viewmodel.DashboardViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,9 +44,20 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     var showProfile by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(false) }
 
     if (showProfile) {
         ProfileScreen(onDismiss = { showProfile = false })
+        return
+    }
+
+    if (showSearch) {
+        GlobalSearchSheet(
+            expenses = expenses,
+            habits = habits,
+            notes = notes,
+            onDismiss = { showSearch = false },
+        )
         return
     }
 
@@ -64,12 +76,14 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
     ) {
         // Header
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Spacer(Modifier.size(40.dp))
+            IconButton(onClick = { showSearch = true }, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Default.Search, "Search", tint = VoxnColors.electricBlue, modifier = Modifier.size(22.dp))
+            }
             Spacer(Modifier.weight(1f))
             Text("V.O.X.N.", style = VoxnFont.mono(28, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 4.sp)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { showProfile = true }, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Default.Person, "Profile", tint = VoxnColors.electricBlue, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Person, "Profile", tint = VoxnColors.electricBlue, modifier = Modifier.size(22.dp))
             }
         }
         Spacer(Modifier.height(4.dp))
@@ -402,6 +416,16 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                 }
             }
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Monthly Report
+        com.voxn.ai.ui.reports.MonthlyReportCard(
+            expenses = expenses,
+            habits = habits,
+            notes = notes,
+            healthData = healthData,
+        )
 
         Spacer(Modifier.height(16.dp))
 
