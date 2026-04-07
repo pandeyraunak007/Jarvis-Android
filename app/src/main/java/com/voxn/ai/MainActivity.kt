@@ -4,7 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.voxn.ai.manager.BiometricLockManager
 import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.UserProfileManager
 import com.voxn.ai.theme.VoxnColors
@@ -34,10 +35,11 @@ import com.voxn.ai.ui.dashboard.DashboardScreen
 import com.voxn.ai.ui.habits.HabitsScreen
 import com.voxn.ai.ui.health.HealthScreen
 import com.voxn.ai.ui.notes.NotesScreen
+import com.voxn.ai.ui.launch.LaunchScreen
 import com.voxn.ai.ui.onboarding.OnboardingScreen
 import com.voxn.ai.ui.spending.SpendingScreen
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -79,15 +81,70 @@ private fun AppRoot() {
     val profileManager = remember { UserProfileManager(context) }
     val budgetManager = remember { BudgetManager(context) }
     val onboardingComplete by profileManager.onboardingComplete.collectAsState()
+    val biometricManager = remember { BiometricLockManager(context) }
+    val biometricUnlocked by biometricManager.isUnlocked.collectAsState()
+    var launchComplete by remember { mutableStateOf(false) }
 
-    if (!onboardingComplete) {
+    if (!launchComplete) {
+        LaunchScreen(onComplete = { launchComplete = true })
+    } else if (!onboardingComplete) {
         OnboardingScreen(
             profileManager = profileManager,
             budgetManager = budgetManager,
             onComplete = { /* state updates automatically via StateFlow */ },
         )
+    } else if (biometricManager.needsUnlock() && !biometricUnlocked) {
+        BiometricLockScreen(biometricManager)
     } else {
         MainScreen()
+    }
+}
+
+@Composable
+private fun BiometricLockScreen(biometricManager: BiometricLockManager) {
+    val context = LocalContext.current
+    val activity = context as? androidx.fragment.app.FragmentActivity
+
+    LaunchedEffect(Unit) {
+        if (activity != null && BiometricLockManager.isBiometricAvailable(context)) {
+            BiometricLockManager.showPrompt(
+                activity,
+                onSuccess = { biometricManager.setUnlocked() },
+                onError = { /* stay on lock screen */ },
+            )
+        } else {
+            biometricManager.setUnlocked() // no biometric hardware, skip
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize().background(VoxnColors.backgroundDark),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Default.Lock, null, tint = VoxnColors.electricBlue, modifier = Modifier.size(48.dp))
+            Spacer(Modifier.height(16.dp))
+            Text("Voxn AI is locked", style = VoxnFont.sectionTitle, color = VoxnColors.textPrimary)
+            Spacer(Modifier.height(8.dp))
+            Text("Authenticate to continue", style = VoxnFont.cardBody, color = VoxnColors.textTertiary)
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = {
+                    if (activity != null) {
+                        BiometricLockManager.showPrompt(
+                            activity,
+                            onSuccess = { biometricManager.setUnlocked() },
+                            onError = { },
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
+            ) {
+                Icon(Icons.Default.Fingerprint, null, tint = VoxnColors.backgroundDark, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("UNLOCK", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.backgroundDark)
+            }
+        }
     }
 }
 

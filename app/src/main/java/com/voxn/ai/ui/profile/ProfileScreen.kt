@@ -1,5 +1,6 @@
 package com.voxn.ai.ui.profile
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,7 +13,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -141,6 +145,63 @@ fun ProfileScreen(onDismiss: () -> Unit) {
         }
 
         Spacer(Modifier.height(16.dp))
+
+        // Data Export
+        GlassCard {
+            SettingSection(icon = Icons.Default.FileDownload, title = "DATA EXPORT", color = VoxnColors.warningOrange)
+            Spacer(Modifier.height(8.dp))
+            Text("Export all your data as CSV files", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+            Spacer(Modifier.height(12.dp))
+            var exporting by remember { mutableStateOf(false) }
+            val scope = rememberCoroutineScope()
+            Button(
+                onClick = {
+                    exporting = true
+                    scope.launch {
+                        val exportManager = com.voxn.ai.manager.DataExportManager(context)
+                        val shareIntent = exportManager.exportAllAndShare()
+                        context.startActivity(Intent.createChooser(shareIntent, "Export Voxn AI Data"))
+                        exporting = false
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.warningOrange.copy(alpha = 0.2f)),
+                shape = RoundedCornerShape(8.dp),
+                enabled = !exporting,
+            ) {
+                if (exporting) {
+                    CircularProgressIndicator(color = VoxnColors.warningOrange, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                } else {
+                    Icon(Icons.Default.Share, null, tint = VoxnColors.warningOrange, modifier = Modifier.size(18.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(if (exporting) "EXPORTING..." else "EXPORT ALL DATA", style = VoxnFont.mono(12, FontWeight.Bold), color = VoxnColors.warningOrange)
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Security
+        if (com.voxn.ai.manager.BiometricLockManager.isBiometricAvailable(context)) {
+            val biometricManager = remember { com.voxn.ai.manager.BiometricLockManager(context) }
+            val lockEnabled by biometricManager.lockEnabled.collectAsStateWithLifecycle()
+
+            GlassCard {
+                SettingSection(icon = Icons.Default.Fingerprint, title = "SECURITY", color = VoxnColors.alertRed)
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Biometric Lock", style = VoxnFont.cardTitle, color = VoxnColors.textPrimary)
+                        Text("Require fingerprint to open app", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+                    }
+                    Switch(
+                        checked = lockEnabled,
+                        onCheckedChange = { biometricManager.setLockEnabled(it) },
+                        colors = SwitchDefaults.colors(checkedTrackColor = VoxnColors.alertRed),
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
 
         // App Info
         GlassCard {

@@ -84,6 +84,10 @@ dependencies {
     // Health Connect
     implementation("androidx.health.connect:connect-client:1.1.0-alpha10")
 
+    // Biometric + AppCompat (for FragmentActivity)
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+
     // Glance (Widgets)
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
