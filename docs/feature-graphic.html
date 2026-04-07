@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voxn AI — Feature Graphic</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .graphic {
+            width: 1024px;
+            height: 500px;
+            background: #0A0A0F;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Background glow effects */
+        .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+        }
+        .glow-1 {
+            width: 400px; height: 400px;
+            background: #00D4FF;
+            top: -100px; left: -50px;
+        }
+        .glow-2 {
+            width: 300px; height: 300px;
+            background: #00D4FF;
+            bottom: -80px; right: -30px;
+        }
+        .glow-3 {
+            width: 200px; height: 200px;
+            background: #39FF14;
+            bottom: -60px; left: 30%;
+            opacity: 0.06;
+        }
+
+        /* Grid lines */
+        .grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Horizontal accent lines */
+        .line-top, .line-bottom {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), rgba(0, 212, 255, 0.6), rgba(0, 212, 255, 0.3), transparent);
+        }
+        .line-top { top: 60px; width: 600px; }
+        .line-bottom { bottom: 60px; width: 500px; }
+
+        /* Corner accents */
+        .corner { position: absolute; width: 30px; height: 30px; }
+        .corner-tl { top: 30px; left: 30px; border-top: 2px solid rgba(0, 212, 255, 0.3); border-left: 2px solid rgba(0, 212, 255, 0.3); }
+        .corner-tr { top: 30px; right: 30px; border-top: 2px solid rgba(0, 212, 255, 0.3); border-right: 2px solid rgba(0, 212, 255, 0.3); }
+        .corner-bl { bottom: 30px; left: 30px; border-bottom: 2px solid rgba(0, 212, 255, 0.3); border-left: 2px solid rgba(0, 212, 255, 0.3); }
+        .corner-br { bottom: 30px; right: 30px; border-bottom: 2px solid rgba(0, 212, 255, 0.3); border-right: 2px solid rgba(0, 212, 255, 0.3); }
+
+        /* Text */
+        .title {
+            font-size: 72px;
+            font-weight: 800;
+            letter-spacing: 12px;
+            color: #FFFFFF;
+            text-shadow: 0 0 40px rgba(0, 212, 255, 0.5), 0 0 80px rgba(0, 212, 255, 0.2);
+            z-index: 1;
+        }
+        .title span {
+            color: #00D4FF;
+        }
+        .tagline {
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 6px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 12px;
+            z-index: 1;
+        }
+        .features {
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 4px;
+            color: #00D4FF;
+            margin-top: 24px;
+            z-index: 1;
+            opacity: 0.8;
+        }
+        .dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: #00D4FF;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin: 0 16px;
+            box-shadow: 0 0 6px #00D4FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="graphic">
+        <!-- Background effects -->
+        <div class="glow-circle glow-1"></div>
+        <div class="glow-circle glow-2"></div>
+        <div class="glow-circle glow-3"></div>
+        <div class="grid"></div>
+
+        <!-- Decorative elements -->
+        <div class="line-top"></div>
+        <div class="line-bottom"></div>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Content -->
+        <div class="title">VOXN <span>AI</span></div>
+        <div class="tagline">YOUR PERSONAL LIFE HUD</div>
+        <div class="features">
+            SPENDING <span class="dot"></span> HABITS <span class="dot"></span> HEALTH <span class="dot"></span> NOTES
+        </div>
+    </div>
+</body>
+</html>
