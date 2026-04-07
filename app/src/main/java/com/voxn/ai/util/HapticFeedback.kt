@@ -18,8 +18,7 @@ object HapticFeedback {
     }
 
     /** Light tick — tab switch, chip selection */
-    fun tick(context: Context) {
-        val vibrator = getVibrator(context)
+    fun tick(context: Context) = safeVibrate(context) { vibrator ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
         } else {
@@ -29,8 +28,7 @@ object HapticFeedback {
     }
 
     /** Medium click — habit completion, toggle */
-    fun click(context: Context) {
-        val vibrator = getVibrator(context)
+    fun click(context: Context) = safeVibrate(context) { vibrator ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
         } else {
@@ -40,8 +38,7 @@ object HapticFeedback {
     }
 
     /** Heavy — delete confirmation, important action */
-    fun heavy(context: Context) {
-        val vibrator = getVibrator(context)
+    fun heavy(context: Context) = safeVibrate(context) { vibrator ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
         } else {
@@ -51,13 +48,20 @@ object HapticFeedback {
     }
 
     /** Success — task complete, export done */
-    fun success(context: Context) {
-        val vibrator = getVibrator(context)
+    fun success(context: Context) = safeVibrate(context) { vibrator ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 30, 50, 30), -1))
         } else {
             @Suppress("DEPRECATION")
             vibrator.vibrate(60)
+        }
+    }
+
+    private inline fun safeVibrate(context: Context, action: (Vibrator) -> Unit) {
+        try {
+            action(getVibrator(context))
+        } catch (_: Exception) {
+            // Silently fail if VIBRATE permission not granted or no vibrator hardware
         }
     }
 }
