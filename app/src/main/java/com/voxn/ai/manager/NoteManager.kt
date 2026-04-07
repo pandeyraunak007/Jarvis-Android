@@ -59,6 +59,8 @@ class NoteManager(private val context: Context) {
             putExtra("title", "Voxn AI Reminder")
             putExtra("message", note.title)
             putExtra("id", note.id.hashCode())
+            putExtra("type", "note")
+            putExtra("note_id", note.id)
         }
         val pending = PendingIntent.getBroadcast(
             context, note.id.hashCode(), intent,

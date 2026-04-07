@@ -10,6 +10,7 @@ import com.voxn.ai.data.database.entity.NoteEntity
 import com.voxn.ai.data.model.ExpenseCategory
 import com.voxn.ai.data.model.HealthData
 import com.voxn.ai.manager.BudgetManager
+import com.voxn.ai.manager.CalendarManager
 import com.voxn.ai.manager.ExpenseParser
 import com.voxn.ai.manager.HabitManager
 import com.voxn.ai.manager.HealthConnectManager
@@ -30,6 +31,7 @@ class DashboardViewModel(app: Application) : AndroidViewModel(app) {
     private val expenseParser = ExpenseParser(app)
     private val noteManager = NoteManager(app)
     val budgetManager = BudgetManager(app)
+    val calendarManager = CalendarManager(app)
 
     val healthData: StateFlow<HealthData> = healthManager.healthData
 
@@ -214,6 +216,10 @@ class DashboardViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshAll() {
         viewModelScope.launch { healthManager.fetchAllData() }
+        viewModelScope.launch {
+            calendarManager.checkPermission()
+            calendarManager.fetchTodayEvents()
+        }
     }
 
     init { refreshAll() }

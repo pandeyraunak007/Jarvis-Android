@@ -66,6 +66,8 @@ class HabitManager(private val context: Context) {
                 putExtra("title", "Voxn AI Habit Reminder")
                 putExtra("message", "Don't forget: ${habit.name}")
                 putExtra("id", habit.id.hashCode())
+                putExtra("type", "habit")
+                putExtra("habit_id", habit.id)
             }
             val pending = PendingIntent.getBroadcast(
                 context, habit.id.hashCode(), intent,

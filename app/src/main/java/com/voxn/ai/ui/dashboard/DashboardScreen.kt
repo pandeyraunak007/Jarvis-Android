@@ -36,6 +36,7 @@ import java.util.*
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
     val monthlyBudget by viewModel.budgetManager.monthlyBudget.collectAsStateWithLifecycle()
+    val calendarEvents by viewModel.calendarManager.todayEvents.collectAsStateWithLifecycle()
     val healthData by viewModel.healthData.collectAsStateWithLifecycle()
     val habits by viewModel.habits.collectAsStateWithLifecycle()
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
@@ -185,6 +186,40 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
             }
 
             Spacer(Modifier.height(16.dp))
+
+            // Calendar events
+            if (calendarEvents.isNotEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Event, null, tint = VoxnColors.purple, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("${calendarEvents.size} event${if (calendarEvents.size > 1) "s" else ""} today", style = VoxnFont.mono(11, FontWeight.Bold), color = VoxnColors.purple)
+                }
+                calendarEvents.take(4).forEach { event ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier.size(6.dp).background(
+                                if (event.isOngoing) VoxnColors.neonGreen else VoxnColors.purple,
+                                CircleShape,
+                            )
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(event.title, style = VoxnFont.caption, color = VoxnColors.textSecondary, maxLines = 1)
+                            Text(event.timeRange, style = VoxnFont.mono(9, FontWeight.Normal), color = VoxnColors.textTertiary)
+                        }
+                        if (event.isOngoing) {
+                            Text("NOW", style = VoxnFont.mono(9, FontWeight.Bold), color = VoxnColors.neonGreen)
+                        }
+                    }
+                }
+                if (calendarEvents.size > 4) {
+                    Text("+${calendarEvents.size - 4} more", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary, modifier = Modifier.padding(start = 20.dp))
+                }
+                Spacer(Modifier.height(12.dp))
+            }
 
             // Today's agenda
             val activeNotes = notes.filter { !it.isCompleted }
