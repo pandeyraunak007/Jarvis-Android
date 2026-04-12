@@ -17,10 +17,13 @@ class HealthViewModel(app: Application) : AndroidViewModel(app) {
     val isAvailable: StateFlow<Boolean> = manager.isAvailable
     val isLoading: StateFlow<Boolean> = manager.isLoading
     val errorMessage: StateFlow<String?> = manager.errorMessage
+    val hasPermissions: StateFlow<Boolean> = manager.hasPermissions
     val permissions = manager.permissions
 
     fun refresh() {
-        viewModelScope.launch { manager.fetchAllData() }
+        viewModelScope.launch {
+            if (manager.checkPermissions()) manager.fetchAllData()
+        }
     }
 
     fun clearError() = manager.clearError()

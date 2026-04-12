@@ -30,6 +30,9 @@ class HealthConnectManager(private val context: Context) {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
+    private val _hasPermissions = MutableStateFlow(false)
+    val hasPermissions: StateFlow<Boolean> = _hasPermissions
+
     val permissions = setOf(
         HealthPermission.getReadPermission(StepsRecord::class),
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
@@ -38,19 +41,42 @@ class HealthConnectManager(private val context: Context) {
     )
 
     init {
-        _isAvailable.value = HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
+        _isAvailable.value = try {
+            HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
+        } catch (e: Throwable) {
+            false
+        }
     }
 
     private fun getClient(): HealthConnectClient? {
-        return if (_isAvailable.value) HealthConnectClient.getOrCreate(context) else null
+        return try {
+            if (_isAvailable.value) HealthConnectClient.getOrCreate(context) else null
+        } catch (e: Throwable) {
+            _isAvailable.value = false
+            null
+        }
     }
 
     fun clearError() {
         _errorMessage.value = null
     }
 
+    suspend fun checkPermissions(): Boolean {
+        val client = getClient() ?: return false
+        return try {
+            val granted = client.permissionController.getGrantedPermissions()
+            val ok = granted.containsAll(permissions)
+            _hasPermissions.value = ok
+            ok
+        } catch (e: Throwable) {
+            _hasPermissions.value = false
+            false
+        }
+    }
+
     suspend fun fetchAllData() {
         val client = getClient() ?: return
+        if (!checkPermissions()) return
         try {
             _isLoading.value = true
             _errorMessage.value = null

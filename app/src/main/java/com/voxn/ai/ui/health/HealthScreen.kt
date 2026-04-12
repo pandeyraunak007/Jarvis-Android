@@ -1,7 +1,9 @@
 package com.voxn.ai.ui.health
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.health.connect.client.PermissionController
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,8 +33,17 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
     val isAvailable by viewModel.isAvailable.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val hasPermissions by viewModel.hasPermissions.collectAsStateWithLifecycle()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract()
+    ) { granted ->
+        if (granted.containsAll(viewModel.permissions)) viewModel.refresh()
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) { viewModel.refresh() }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -62,22 +73,30 @@ fun HealthScreen(viewModel: HealthViewModel = viewModel()) {
             Spacer(Modifier.height(32.dp))
         }
 
-        if (!isAvailable) {
-            // Authorization prompt
+        if (!isAvailable || !hasPermissions) {
             GlassCard {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Favorite, null, tint = VoxnColors.alertRed, modifier = Modifier.size(48.dp))
                     Spacer(Modifier.height(16.dp))
-                    Text("Health Systems Offline", style = VoxnFont.sectionTitle, color = VoxnColors.textPrimary)
+                    Text(
+                        if (!isAvailable) "Health Systems Offline" else "Authorization Required",
+                        style = VoxnFont.sectionTitle, color = VoxnColors.textPrimary,
+                    )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Grant Health Connect access to display steps, calories, sleep, and workout metrics.",
+                        if (!isAvailable)
+                            "Install Health Connect from the Play Store to display steps, calories, sleep, and workout metrics."
+                        else
+                            "Grant Health Connect access to display steps, calories, sleep, and workout metrics.",
                         style = VoxnFont.cardBody, color = VoxnColors.textSecondary,
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
                     Spacer(Modifier.height(16.dp))
                     Button(
-                        onClick = { /* Open Health Connect settings */ },
+                        onClick = {
+                            if (isAvailable) permissionLauncher.launch(viewModel.permissions)
+                        },
+                        enabled = isAvailable,
                         colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
                     ) {
                         Text("ACTIVATE", style = VoxnFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
