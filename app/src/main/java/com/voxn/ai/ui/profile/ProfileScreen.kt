@@ -158,10 +158,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                 onClick = {
                     exporting = true
                     scope.launch {
-                        val exportManager = com.voxn.ai.manager.DataExportManager(context)
-                        val shareIntent = exportManager.exportAllAndShare()
-                        context.startActivity(Intent.createChooser(shareIntent, "Export Voxn AI Data"))
-                        exporting = false
+                        try {
+                            val exportManager = com.voxn.ai.manager.DataExportManager(context)
+                            val shareIntent = exportManager.exportAllAndShare()
+                            context.startActivity(Intent.createChooser(shareIntent, "Export Voxn AI Data"))
+                        } catch (_: Exception) {
+                            // Export failed (I/O, FileProvider, or no share target)
+                        } finally {
+                            exporting = false
+                        }
                     }
                 },
                 modifier = Modifier.height(44.dp),

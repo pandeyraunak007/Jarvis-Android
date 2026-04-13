@@ -32,18 +32,27 @@ class RecurringExpenseManager(private val context: Context) {
     private fun loadFromPrefs() {
         val json = prefs.getString("recurring_expenses", "[]") ?: "[]"
         val list = mutableListOf<RecurringExpense>()
-        val arr = JSONArray(json)
-        for (i in 0 until arr.length()) {
-            val obj = arr.getJSONObject(i)
-            list.add(
-                RecurringExpense(
-                    id = obj.getString("id"),
-                    name = obj.getString("name"),
-                    amount = obj.getDouble("amount"),
-                    category = try { ExpenseCategory.valueOf(obj.getString("category")) } catch (_: Exception) { ExpenseCategory.Other },
-                    dayOfMonth = obj.getInt("dayOfMonth"),
-                )
-            )
+        try {
+            val arr = JSONArray(json)
+            for (i in 0 until arr.length()) {
+                try {
+                    val obj = arr.getJSONObject(i)
+                    list.add(
+                        RecurringExpense(
+                            id = obj.optString("id", UUID.randomUUID().toString()),
+                            name = obj.optString("name", ""),
+                            amount = obj.optDouble("amount", 0.0),
+                            category = try { ExpenseCategory.valueOf(obj.optString("category", "Other")) } catch (_: Exception) { ExpenseCategory.Other },
+                            dayOfMonth = obj.optInt("dayOfMonth", 1),
+                        )
+                    )
+                } catch (_: Exception) {
+                    // Skip corrupt entry
+                }
+            }
+        } catch (_: Exception) {
+            // Stored JSON corrupt — reset to empty and wipe bad data
+            prefs.edit().remove("recurring_expenses").apply()
         }
         _recurringExpenses.value = list
     }

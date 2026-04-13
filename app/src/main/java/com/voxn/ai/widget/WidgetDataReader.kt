@@ -5,7 +5,7 @@ import com.voxn.ai.data.database.VoxnDatabase
 import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.ExpenseParser
 import com.voxn.ai.manager.UserProfileManager
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import java.text.DecimalFormat
 import java.util.Calendar
 
@@ -42,8 +42,8 @@ suspend fun readWidgetData(context: Context): WidgetData {
     val profileManager = UserProfileManager(context)
     val budgetManager = BudgetManager(context)
 
-    val expenses = db.expenseDao().getAll().first()
-    val habits = db.habitDao().getAllWithCompletions().first()
+    val expenses = db.expenseDao().getAll().firstOrNull().orEmpty()
+    val habits = db.habitDao().getAllWithCompletions().firstOrNull().orEmpty()
 
     val todayStart = ExpenseParser.todayStart()
     val monthStart = ExpenseParser.monthStart()

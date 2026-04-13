@@ -160,8 +160,8 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("BUDGET & GOALS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.neonGreen, letterSpacing = 2.sp)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { showBudgetDialog = true }, modifier = Modifier.size(28.dp)) {
-                            Icon(Icons.Default.Settings, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(18.dp))
+                        IconButton(onClick = { showBudgetDialog = true }, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.Default.Settings, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(20.dp))
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -253,8 +253,8 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("RECURRING BILLS", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.purple, letterSpacing = 2.sp)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { showRecurringDialog = true }, modifier = Modifier.size(28.dp)) {
-                            Icon(Icons.Default.AddCircle, null, tint = VoxnColors.purple, modifier = Modifier.size(20.dp))
+                        IconButton(onClick = { showRecurringDialog = true }, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.Default.AddCircle, null, tint = VoxnColors.purple, modifier = Modifier.size(22.dp))
                         }
                     }
                     if (recurringExpenses.isEmpty()) {
@@ -275,13 +275,12 @@ fun SpendingScreen(viewModel: SpendingViewModel = viewModel()) {
                                 }
                                 Spacer(Modifier.width(8.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(re.name, style = VoxnFont.cardBody, color = VoxnColors.textPrimary)
+                                    Text(re.name, style = VoxnFont.cardBody, color = VoxnColors.textPrimary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                     Text("Day ${re.dayOfMonth} every month", style = VoxnFont.caption, color = VoxnColors.textTertiary)
                                 }
                                 Text(viewModel.formatAmount(re.amount), style = VoxnFont.mono(12, FontWeight.Bold), color = VoxnColors.textSecondary)
-                                Spacer(Modifier.width(4.dp))
-                                IconButton(onClick = { viewModel.recurringManager.removeRecurringExpense(re.id) }, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Default.Close, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
+                                IconButton(onClick = { viewModel.recurringManager.removeRecurringExpense(re.id) }, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.Close, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -594,17 +593,18 @@ private fun BudgetSetupDialog(
     var budgetText by remember { mutableStateOf(if (currentBudget > 0) currentBudget.toLong().toString() else "") }
     var savingsText by remember { mutableStateOf(if (currentSavingsGoal > 0) currentSavingsGoal.toLong().toString() else "") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = VoxnColors.backgroundMid,
-            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.neonGreen.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("BUDGET & GOALS", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.neonGreen, letterSpacing = 3.sp)
-                Spacer(Modifier.height(16.dp))
-
+    com.voxn.ai.ui.components.VoxnDialog(
+        title = "BUDGET & GOALS",
+        accent = VoxnColors.neonGreen,
+        onDismiss = onDismiss,
+        confirmLabel = "SAVE",
+        onConfirm = {
+            onSave(
+                budgetText.toDoubleOrNull() ?: 0.0,
+                savingsText.toDoubleOrNull() ?: 0.0,
+            )
+        },
+    ) {
                 OutlinedTextField(
                     value = budgetText,
                     onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,8}$"))) budgetText = it },
@@ -625,35 +625,6 @@ private fun BudgetSetupDialog(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text("Set to 0 or leave empty to disable", style = VoxnFont.caption, color = VoxnColors.textTertiary)
-
-                Spacer(Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1)
-                    }
-                    Button(
-                        onClick = {
-                            onSave(
-                                budgetText.toDoubleOrNull() ?: 0.0,
-                                savingsText.toDoubleOrNull() ?: 0.0,
-                            )
-                        },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.neonGreen),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text("SAVE", style = VoxnFont.mono(13, FontWeight.Bold), color = VoxnColors.backgroundDark, maxLines = 1)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -668,17 +639,18 @@ private fun AddRecurringExpenseDialog(
     var category by remember { mutableStateOf(ExpenseCategory.Bills) }
     var dayOfMonth by remember { mutableStateOf("1") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = VoxnColors.backgroundMid,
-            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.purple.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("ADD RECURRING BILL", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.purple, letterSpacing = 3.sp)
-                Spacer(Modifier.height(16.dp))
-
+    com.voxn.ai.ui.components.VoxnDialog(
+        title = "ADD RECURRING BILL",
+        accent = VoxnColors.purple,
+        onDismiss = onDismiss,
+        confirmLabel = "ADD",
+        confirmEnabled = name.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) > 0 && (dayOfMonth.toIntOrNull() ?: 0) in 1..31,
+        onConfirm = {
+            val amt = amount.toDoubleOrNull() ?: return@VoxnDialog
+            val day = dayOfMonth.toIntOrNull() ?: return@VoxnDialog
+            onAdd(name, amt, category, day)
+        },
+    ) {
                 OutlinedTextField(
                     value = name, onValueChange = { name = it },
                     label = { Text("Bill name (e.g., Netflix)", color = VoxnColors.textTertiary) },
@@ -723,31 +695,6 @@ private fun AddRecurringExpenseDialog(
                         }
                     }
                 }
-
-                Spacer(Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
-                        shape = RoundedCornerShape(12.dp),
-                    ) { Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1) }
-                    Button(
-                        onClick = {
-                            val amt = amount.toDoubleOrNull() ?: return@Button
-                            val day = dayOfMonth.toIntOrNull() ?: return@Button
-                            onAdd(name, amt, category, day)
-                        },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.purple),
-                        enabled = name.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) > 0 && (dayOfMonth.toIntOrNull() ?: 0) in 1..31,
-                        shape = RoundedCornerShape(12.dp),
-                    ) { Text("ADD", style = VoxnFont.mono(13, FontWeight.Bold), maxLines = 1) }
-                }
-            }
-        }
     }
 }
 
@@ -835,14 +782,18 @@ private fun CustomDateRangeDialog(viewModel: SpendingViewModel) {
         initialSelectedDateMillis = if (pickingStart) customStart else customEnd
     )
 
-    Dialog(onDismissRequest = { viewModel.dismissCustomDatePicker() }) {
+    Dialog(
+        onDismissRequest = { viewModel.dismissCustomDatePicker() },
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             color = VoxnColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.electricBlue.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("CUSTOM RANGE", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 3.sp)
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("CUSTOM RANGE", style = VoxnFont.mono(16, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 2.sp)
                 Spacer(Modifier.height(16.dp))
 
                 // FROM / TO toggle
@@ -904,18 +855,13 @@ private fun CustomDateRangeDialog(viewModel: SpendingViewModel) {
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { viewModel.dismissCustomDatePicker() }) {
-                        Text("Cancel", color = VoxnColors.textTertiary)
-                    }
-                    Button(
-                        onClick = { viewModel.applyCustomRange() },
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
-                    ) {
-                        Text("APPLY RANGE", style = VoxnFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
-                    }
-                }
+                Spacer(Modifier.height(8.dp))
+                com.voxn.ai.ui.components.VoxnDialogActions(
+                    onCancel = { viewModel.dismissCustomDatePicker() },
+                    confirmLabel = "APPLY RANGE",
+                    onConfirm = { viewModel.applyCustomRange() },
+                    accent = VoxnColors.electricBlue,
+                )
             }
         }
     }
@@ -932,17 +878,14 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
     var showDatePicker by remember { mutableStateOf(false) }
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
-    Dialog(onDismissRequest = { viewModel.hideAddExpense() }) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = VoxnColors.backgroundMid,
-            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.warningOrange.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp),
-        ) {
-            Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
-                Text("LOG EXPENSE", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.warningOrange, letterSpacing = 3.sp)
-                Spacer(Modifier.height(16.dp))
-
+    com.voxn.ai.ui.components.VoxnDialog(
+        title = "LOG EXPENSE",
+        accent = VoxnColors.warningOrange,
+        onDismiss = { viewModel.hideAddExpense() },
+        confirmLabel = "LOG",
+        confirmEnabled = amount.toDoubleOrNull() != null && (amount.toDoubleOrNull() ?: 0.0) > 0,
+        onConfirm = { amount.toDoubleOrNull()?.let { viewModel.addExpense(it, merchant, category, paymentMethod, selectedDate) } },
+    ) {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { newValue ->
@@ -1025,32 +968,6 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
                         }
                     }
                 }
-
-                Spacer(Modifier.height(24.dp))
-
-                // Action buttons — full width
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(
-                        onClick = { viewModel.hideAddExpense() },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text("Cancel", style = VoxnFont.mono(14, FontWeight.Medium), maxLines = 1)
-                    }
-                    Button(
-                        onClick = { amount.toDoubleOrNull()?.let { viewModel.addExpense(it, merchant, category, paymentMethod, selectedDate) } },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.warningOrange),
-                        enabled = amount.toDoubleOrNull() != null && amount.toDoubleOrNull()!! > 0,
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text("LOG", style = VoxnFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp, maxLines = 1)
-                    }
-                }
-            }
-        }
     }
 
     // Date picker dialog
@@ -1099,36 +1016,21 @@ private fun AddExpenseDialog(viewModel: SpendingViewModel) {
 private fun ParseDialog(viewModel: SpendingViewModel) {
     var text by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = { viewModel.hideParse() }) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = VoxnColors.backgroundMid,
-            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.warningOrange.copy(alpha = 0.3f)),
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("PARSE NOTIFICATION", style = VoxnFont.mono(16, FontWeight.Bold), color = VoxnColors.warningOrange, letterSpacing = 2.sp)
-                Spacer(Modifier.height(12.dp))
-                Text("Paste your bank SMS or notification text below", style = VoxnFont.caption, color = VoxnColors.textTertiary)
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = text, onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.warningOrange, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.warningOrange),
-                )
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { viewModel.hideParse() }) { Text("Cancel", color = VoxnColors.textTertiary) }
-                    Button(
-                        onClick = { viewModel.parseAndAdd(text); viewModel.hideParse() },
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.warningOrange),
-                        enabled = text.isNotBlank(),
-                    ) {
-                        Icon(Icons.Default.Memory, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("PARSE", style = VoxnFont.mono(14, FontWeight.Bold), letterSpacing = 2.sp)
-                    }
-                }
-            }
-        }
+    com.voxn.ai.ui.components.VoxnDialog(
+        title = "PARSE NOTIFICATION",
+        accent = VoxnColors.warningOrange,
+        onDismiss = { viewModel.hideParse() },
+        confirmLabel = "PARSE",
+        confirmEnabled = text.isNotBlank(),
+        onConfirm = { viewModel.parseAndAdd(text); viewModel.hideParse() },
+    ) {
+        Text("Paste your bank SMS or notification text below", style = VoxnFont.caption, color = VoxnColors.textTertiary)
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = text, onValueChange = { text = it },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 200.dp),
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.warningOrange, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.warningOrange),
+            shape = RoundedCornerShape(12.dp),
+        )
     }
 }

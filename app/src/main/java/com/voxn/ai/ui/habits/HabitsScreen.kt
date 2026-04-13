@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -175,12 +176,12 @@ private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: Habi
                     )
                 }
                 Spacer(Modifier.width(4.dp))
-                IconButton(onClick = { HapticFeedback.click(context); viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Add, null, tint = VoxnColors.neonGreen, modifier = Modifier.size(18.dp))
+                IconButton(onClick = { HapticFeedback.click(context); viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Default.Add, null, tint = VoxnColors.neonGreen, modifier = Modifier.size(20.dp))
                 }
             } else {
                 // Checkbox for daily/weekly
-                IconButton(onClick = { HapticFeedback.click(context); viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = { HapticFeedback.click(context); viewModel.toggleCompletion(habitWithCompletions) }, modifier = Modifier.size(44.dp)) {
                     Icon(
                         if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                         null,
@@ -197,6 +198,7 @@ private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: Habi
                     style = VoxnFont.cardTitle,
                     color = if (isCompleted) VoxnColors.textTertiary else VoxnColors.textPrimary,
                     textDecoration = if (isCompleted && !isMulti) TextDecoration.LineThrough else null,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
@@ -225,8 +227,8 @@ private fun HabitRow(habitWithCompletions: HabitWithCompletions, viewModel: Habi
                 Spacer(Modifier.width(8.dp))
             }
 
-            IconButton(onClick = { viewModel.requestDeleteHabit(habitWithCompletions.habit) }, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Default.Close, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+            IconButton(onClick = { viewModel.requestDeleteHabit(habitWithCompletions.habit) }, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Default.Close, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -333,17 +335,20 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
     var targetCount by remember { mutableIntStateOf(3) }
     var selectedDays by remember { mutableStateOf(setOf<Int>()) }
 
-    Dialog(onDismissRequest = { viewModel.hideAddHabit() }) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = VoxnColors.backgroundMid,
-            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.electricBlue.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("NEW HABIT", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 3.sp)
-                Spacer(Modifier.height(16.dp))
-
+    com.voxn.ai.ui.components.VoxnDialog(
+        title = "NEW HABIT",
+        accent = VoxnColors.electricBlue,
+        onDismiss = { viewModel.hideAddHabit() },
+        confirmLabel = "ADD HABIT",
+        confirmEnabled = name.isNotBlank(),
+        onConfirm = {
+            viewModel.addHabit(
+                name, reminderEnabled, reminderHour, reminderMinute,
+                selectedFrequency.name, targetCount,
+                selectedDays.sorted().joinToString(","),
+            )
+        },
+    ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -410,12 +415,12 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("TARGET PER DAY", style = VoxnFont.mono(12, FontWeight.Medium), color = VoxnColors.textSecondary)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { if (targetCount > 2) targetCount-- }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Remove, null, tint = VoxnColors.textSecondary, modifier = Modifier.size(18.dp))
+                        IconButton(onClick = { if (targetCount > 2) targetCount-- }, modifier = Modifier.size(44.dp)) {
+                            Icon(Icons.Default.Remove, null, tint = VoxnColors.textSecondary, modifier = Modifier.size(20.dp))
                         }
                         Text("$targetCount", style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.neonGreen)
-                        IconButton(onClick = { if (targetCount < 20) targetCount++ }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Add, null, tint = VoxnColors.textSecondary, modifier = Modifier.size(18.dp))
+                        IconButton(onClick = { if (targetCount < 20) targetCount++ }, modifier = Modifier.size(44.dp)) {
+                            Icon(Icons.Default.Add, null, tint = VoxnColors.textSecondary, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -458,36 +463,6 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                     }
                 }
 
-                Spacer(Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(
-                        onClick = { viewModel.hideAddHabit() },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1)
-                    }
-                    Button(
-                        onClick = {
-                            viewModel.addHabit(
-                                name, reminderEnabled, reminderHour, reminderMinute,
-                                selectedFrequency.name, targetCount,
-                                selectedDays.sorted().joinToString(","),
-                            )
-                        },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
-                        enabled = name.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text("ADD HABIT", style = VoxnFont.mono(13, FontWeight.Bold), maxLines = 1)
-                    }
-                }
-            }
-        }
     }
 
     // Time picker dialog
@@ -497,14 +472,18 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
             initialMinute = reminderMinute,
             is24Hour = false,
         )
-        Dialog(onDismissRequest = { showTimePicker = false }) {
+        Dialog(
+            onDismissRequest = { showTimePicker = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        ) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = VoxnColors.backgroundMid,
                 border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.electricBlue.copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("SET REMINDER TIME", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.electricBlue, letterSpacing = 2.sp)
@@ -527,30 +506,17 @@ private fun AddHabitDialog(viewModel: HabitViewModel) {
                             timeSelectorUnselectedContentColor = VoxnColors.textSecondary,
                         ),
                     )
-                    Spacer(Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(
-                            onClick = { showTimePicker = false },
-                            modifier = Modifier.weight(1f).height(44.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
-                            shape = RoundedCornerShape(12.dp),
-                        ) {
-                            Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1)
-                        }
-                        Button(
-                            onClick = {
-                                reminderHour = timePickerState.hour
-                                reminderMinute = timePickerState.minute
-                                showTimePicker = false
-                            },
-                            modifier = Modifier.weight(1f).height(44.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.electricBlue),
-                            shape = RoundedCornerShape(12.dp),
-                        ) {
-                            Text("SET", style = VoxnFont.mono(13, FontWeight.Bold), maxLines = 1)
-                        }
-                    }
+                    Spacer(Modifier.height(8.dp))
+                    com.voxn.ai.ui.components.VoxnDialogActions(
+                        onCancel = { showTimePicker = false },
+                        confirmLabel = "SET",
+                        onConfirm = {
+                            reminderHour = timePickerState.hour
+                            reminderMinute = timePickerState.minute
+                            showTimePicker = false
+                        },
+                        accent = VoxnColors.electricBlue,
+                    )
                 }
             }
         }

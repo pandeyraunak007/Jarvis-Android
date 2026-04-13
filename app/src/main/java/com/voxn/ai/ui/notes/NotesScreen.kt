@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
@@ -282,7 +283,7 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
 
             // Action buttons
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = { HapticFeedback.success(context); viewModel.toggleComplete(note) }, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { HapticFeedback.success(context); viewModel.toggleComplete(note) }, modifier = Modifier.size(44.dp)) {
                     Icon(
                         if (note.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                         null,
@@ -290,7 +291,7 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
                         modifier = Modifier.size(22.dp),
                     )
                 }
-                IconButton(onClick = { viewModel.togglePin(note) }, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { viewModel.togglePin(note) }, modifier = Modifier.size(44.dp)) {
                     Icon(
                         Icons.Default.PushPin,
                         null,
@@ -298,10 +299,10 @@ private fun NoteRow(note: NoteEntity, viewModel: NoteViewModel) {
                         modifier = Modifier.size(18.dp),
                     )
                 }
-                IconButton(onClick = { viewModel.startEditing(note) }, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { viewModel.startEditing(note) }, modifier = Modifier.size(44.dp)) {
                     Icon(Icons.Default.Edit, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(18.dp))
                 }
-                IconButton(onClick = { viewModel.requestDeleteNote(note) }, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { viewModel.requestDeleteNote(note) }, modifier = Modifier.size(44.dp)) {
                     Icon(Icons.Default.Delete, null, tint = VoxnColors.alertRed.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
                 }
             }
@@ -331,27 +332,50 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
     val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
 
-    Dialog(onDismissRequest = { viewModel.hideAdd() }) {
+    Dialog(
+        onDismissRequest = { viewModel.hideAdd() },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             color = VoxnColors.backgroundMid,
             border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.cyan.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .heightIn(max = 640.dp),
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
-            ) {
-                Text(
-                    if (isEditing) "EDIT NOTE" else "NEW NOTE",
-                    style = VoxnFont.mono(18, FontWeight.Bold), color = VoxnColors.cyan, letterSpacing = 3.sp,
-                )
-                Spacer(Modifier.height(16.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Header — fixed
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (isEditing) "EDIT NOTE" else "NEW NOTE",
+                        style = VoxnFont.mono(16, FontWeight.Bold), color = VoxnColors.cyan, letterSpacing = 2.sp,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = { viewModel.hideAdd() }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, null, tint = VoxnColors.textTertiary, modifier = Modifier.size(20.dp))
+                    }
+                }
+                HorizontalDivider(color = VoxnColors.textTertiary.copy(alpha = 0.15f))
+
+                // Scrollable body
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                ) {
 
                 OutlinedTextField(
                     value = title, onValueChange = { title = it },
                     label = { Text("Title", color = VoxnColors.textTertiary) },
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.cyan, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.cyan),
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -359,9 +383,10 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                     value = body, onValueChange = { body = it },
                     label = { Text("Details", color = VoxnColors.textTertiary) },
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VoxnColors.cyan, unfocusedBorderColor = VoxnColors.textTertiary.copy(alpha = 0.3f), focusedTextColor = VoxnColors.textPrimary, unfocusedTextColor = VoxnColors.textPrimary, cursorColor = VoxnColors.cyan),
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 88.dp, max = 120.dp),
+                    shape = RoundedCornerShape(12.dp),
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
                 // Category
                 Text("CATEGORY", style = VoxnFont.mono(12, FontWeight.Medium), color = VoxnColors.textSecondary)
@@ -479,18 +504,25 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                     }
                 }
 
-                Spacer(Modifier.height(24.dp))
+                } // end scrollable body
 
-                // Action buttons — full width
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                HorizontalDivider(color = VoxnColors.textTertiary.copy(alpha = 0.15f))
+
+                // Sticky action row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     OutlinedButton(
                         onClick = { viewModel.hideAdd() },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textTertiary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.3f)),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VoxnColors.textSecondary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, VoxnColors.textTertiary.copy(alpha = 0.4f)),
+                        shape = RoundedCornerShape(14.dp),
                     ) {
-                        Text("Cancel", style = VoxnFont.mono(13, FontWeight.Medium), maxLines = 1)
+                        Text("CANCEL", style = VoxnFont.mono(13, FontWeight.Medium), letterSpacing = 1.sp, maxLines = 1)
                     }
                     Button(
                         onClick = {
@@ -500,14 +532,19 @@ private fun AddEditNoteDialog(viewModel: NoteViewModel) {
                                 if (hasReminder) reminderDate else null,
                             )
                         },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VoxnColors.cyan),
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VoxnColors.cyan,
+                            contentColor = VoxnColors.backgroundDark,
+                            disabledContainerColor = VoxnColors.cyan.copy(alpha = 0.3f),
+                            disabledContentColor = VoxnColors.backgroundDark.copy(alpha = 0.5f),
+                        ),
                         enabled = title.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                     ) {
                         Text(
                             if (isEditing) "UPDATE" else "CREATE",
-                            style = VoxnFont.mono(13, FontWeight.Bold), maxLines = 1,
+                            style = VoxnFont.mono(13, FontWeight.Bold), letterSpacing = 1.sp, maxLines = 1,
                         )
                     }
                 }
