@@ -96,5 +96,13 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
+    // OkHttp (for Groq streaming API)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Security (EncryptedSharedPreferences for API key storage)
+    implementation("androidx.security:security-crypto:1.0.0")
+
+    // JSON (org.json is already in Android SDK, no extra dep needed)
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

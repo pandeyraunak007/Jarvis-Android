@@ -12,6 +12,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,9 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.voxn.ai.manager.BiometricLockManager
+import com.voxn.ai.manager.SmartNotificationManager
 import com.voxn.ai.util.HapticFeedback
 import com.voxn.ai.manager.BudgetManager
 import com.voxn.ai.manager.UserProfileManager
+import kotlinx.coroutines.launch
 import com.voxn.ai.theme.VoxnColors
 import com.voxn.ai.theme.VoxnFont
 import com.voxn.ai.theme.VoxnTheme
@@ -38,6 +41,7 @@ import com.voxn.ai.ui.health.HealthScreen
 import com.voxn.ai.ui.notes.NotesScreen
 import com.voxn.ai.ui.launch.LaunchScreen
 import com.voxn.ai.ui.onboarding.OnboardingScreen
+import com.voxn.ai.ui.chat.ChatScreen
 import com.voxn.ai.ui.spending.SpendingScreen
 
 class MainActivity : AppCompatActivity() {
@@ -50,13 +54,23 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { _ -> }
 
+    private lateinit var smartNotificationManager: SmartNotificationManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        smartNotificationManager = SmartNotificationManager(this)
         enableEdgeToEdge()
         setContent {
             VoxnTheme {
                 AppRoot()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        kotlinx.coroutines.MainScope().launch {
+            smartNotificationManager.refresh()
         }
     }
 
@@ -166,8 +180,15 @@ private fun MainScreen() {
         )
     }
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showChat by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    if (showChat) {
+        ChatScreen(onBack = { showChat = false })
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(VoxnColors.backgroundDark)) {
         // Content
         when (selectedTab) {
@@ -176,6 +197,21 @@ private fun MainScreen() {
             2 -> HabitsScreen()
             3 -> SpendingScreen()
             4 -> NotesScreen()
+        }
+
+        // Floating JARVIS chat button
+        FloatingActionButton(
+            onClick = { showChat = true },
+            containerColor = VoxnColors.electricBlue,
+            contentColor = Color.Black,
+            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 80.dp)
+                .navigationBarsPadding()
+                .size(56.dp),
+        ) {
+            Icon(Icons.Default.GraphicEq, "JARVIS", modifier = Modifier.size(24.dp))
         }
 
         // Custom Tab Bar

@@ -56,11 +56,16 @@ class CalendarManager(private val context: Context) {
     }
 
     suspend fun fetchTodayEvents() {
-        if (!_hasPermission.value) return
+        val events = fetchEventsForDate(System.currentTimeMillis())
+        _todayEvents.value = events
+    }
 
-        withContext(Dispatchers.IO) {
+    suspend fun fetchEventsForDate(dateMillis: Long): List<CalendarEvent> {
+        if (!_hasPermission.value) return emptyList()
+
+        return withContext(Dispatchers.IO) {
             val events = mutableListOf<CalendarEvent>()
-            val cal = Calendar.getInstance()
+            val cal = Calendar.getInstance().apply { timeInMillis = dateMillis }
             cal.set(Calendar.HOUR_OF_DAY, 0)
             cal.set(Calendar.MINUTE, 0)
             cal.set(Calendar.SECOND, 0)
@@ -109,7 +114,7 @@ class CalendarManager(private val context: Context) {
                 cursor?.close()
             }
 
-            _todayEvents.value = events
+            events
         }
     }
 }

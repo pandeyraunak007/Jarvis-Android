@@ -10,7 +10,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +40,7 @@ import java.util.*
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
     val monthlyBudget by viewModel.budgetManager.monthlyBudget.collectAsStateWithLifecycle()
-    val calendarEvents by viewModel.calendarManager.todayEvents.collectAsStateWithLifecycle()
+    val calendarTodayEvents by viewModel.calendarManager.todayEvents.collectAsStateWithLifecycle()
     val healthData by viewModel.healthData.collectAsStateWithLifecycle()
     val habits by viewModel.habits.collectAsStateWithLifecycle()
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
@@ -147,14 +149,83 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
             Spacer(Modifier.height(16.dp))
         }
 
-        // Today's Calendar
-        GlassCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.CalendarMonth, null, tint = VoxnColors.purple, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("TODAY'S SCHEDULE", style = VoxnFont.mono(14, FontWeight.Bold), color = VoxnColors.purple, letterSpacing = 2.sp)
+        // Calendar with day navigation
+        var scheduleDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+        val scope = rememberCoroutineScope()
+        val calendarEvents by remember(scheduleDateMillis) {
+            derivedStateOf {
+                val todayCal = Calendar.getInstance()
+                val selCal = Calendar.getInstance().apply { timeInMillis = scheduleDateMillis }
+                if (todayCal.get(Calendar.YEAR) == selCal.get(Calendar.YEAR) &&
+                    todayCal.get(Calendar.DAY_OF_YEAR) == selCal.get(Calendar.DAY_OF_YEAR)
+                ) calendarTodayEvents else emptyList()
             }
-            Spacer(Modifier.height(16.dp))
+        }
+        var selectedDayEvents by remember { mutableStateOf<List<com.voxn.ai.manager.CalendarEvent>>(emptyList()) }
+        val isToday = remember(scheduleDateMillis) {
+            val todayCal = Calendar.getInstance()
+            val selCal = Calendar.getInstance().apply { timeInMillis = scheduleDateMillis }
+            todayCal.get(Calendar.YEAR) == selCal.get(Calendar.YEAR) &&
+                todayCal.get(Calendar.DAY_OF_YEAR) == selCal.get(Calendar.DAY_OF_YEAR)
+        }
+        val scheduleDateLabel = remember(scheduleDateMillis) {
+            val todayCal = Calendar.getInstance()
+            val selCal = Calendar.getInstance().apply { timeInMillis = scheduleDateMillis }
+            val tomorrowCal = (todayCal.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }
+            val yesterdayCal = (todayCal.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
+            when {
+                selCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) && selCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR) -> "TODAY'S SCHEDULE"
+                selCal.get(Calendar.YEAR) == tomorrowCal.get(Calendar.YEAR) && selCal.get(Calendar.DAY_OF_YEAR) == tomorrowCal.get(Calendar.DAY_OF_YEAR) -> "TOMORROW"
+                selCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) && selCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR) -> "YESTERDAY"
+                else -> SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(scheduleDateMillis)).uppercase()
+            }
+        }
+        val displayEvents = if (isToday) calendarTodayEvents else selectedDayEvents
+
+        LaunchedEffect(scheduleDateMillis) {
+            if (!isToday) {
+                selectedDayEvents = viewModel.calendarManager.fetchEventsForDate(scheduleDateMillis)
+            }
+        }
+
+        GlassCard {
+            // Header with day navigation
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = {
+                        val cal = Calendar.getInstance().apply { timeInMillis = scheduleDateMillis }
+                        cal.add(Calendar.DAY_OF_YEAR, -1)
+                        scheduleDateMillis = cal.timeInMillis
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.Default.ChevronLeft, "Previous day", tint = VoxnColors.purple, modifier = Modifier.size(18.dp))
+                }
+                Icon(Icons.Default.CalendarMonth, null, tint = VoxnColors.purple, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(scheduleDateLabel, style = VoxnFont.mono(12, FontWeight.Bold), color = VoxnColors.purple, letterSpacing = 2.sp)
+                Spacer(Modifier.weight(1f))
+                if (!isToday) {
+                    TextButton(
+                        onClick = { scheduleDateMillis = System.currentTimeMillis() },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text("Today", style = VoxnFont.mono(10, FontWeight.Bold), color = VoxnColors.backgroundDark,
+                            modifier = Modifier.background(VoxnColors.purple, RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 2.dp))
+                    }
+                }
+                IconButton(
+                    onClick = {
+                        val cal = Calendar.getInstance().apply { timeInMillis = scheduleDateMillis }
+                        cal.add(Calendar.DAY_OF_YEAR, 1)
+                        scheduleDateMillis = cal.timeInMillis
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.Default.ChevronRight, "Next day", tint = VoxnColors.purple, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(Modifier.height(12.dp))
 
             // Mini calendar showing current week
             val calendar = remember { Calendar.getInstance() }
@@ -164,7 +235,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
             val dayNames = remember { listOf("S", "M", "T", "W", "T", "F", "S") }
 
             Text(
-                monthFormat.format(calendar.time).uppercase(),
+                monthFormat.format(Date(scheduleDateMillis)).uppercase(),
                 style = VoxnFont.mono(11, FontWeight.Medium),
                 color = VoxnColors.textTertiary,
                 letterSpacing = 2.sp,
@@ -172,13 +243,18 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
             Spacer(Modifier.height(12.dp))
 
             // Week strip
+            val selectedDayCal = remember(scheduleDateMillis) { Calendar.getInstance().apply { timeInMillis = scheduleDateMillis } }
+            val selectedDay = remember(scheduleDateMillis) { selectedDayCal.get(Calendar.DAY_OF_MONTH) }
+            val selectedDayOfYear = remember(scheduleDateMillis) { selectedDayCal.get(Calendar.DAY_OF_YEAR) }
+            val selectedYear = remember(scheduleDateMillis) { selectedDayCal.get(Calendar.YEAR) }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                val weekCal = (calendar.clone() as Calendar).apply {
-                    add(Calendar.DAY_OF_MONTH, -(dayOfWeek - 1))
+                val weekCal = (selectedDayCal.clone() as Calendar).apply {
+                    add(Calendar.DAY_OF_MONTH, -(get(Calendar.DAY_OF_WEEK) - 1))
                 }
                 for (i in 0..6) {
                     val day = weekCal.get(Calendar.DAY_OF_MONTH)
-                    val isToday = day == today
+                    val isDaySelected = weekCal.get(Calendar.DAY_OF_YEAR) == selectedDayOfYear && weekCal.get(Calendar.YEAR) == selectedYear
+                    val isDayToday = weekCal.get(Calendar.DAY_OF_YEAR) == Calendar.getInstance().get(Calendar.DAY_OF_YEAR) && weekCal.get(Calendar.YEAR) == Calendar.getInstance().get(Calendar.YEAR)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f),
@@ -186,22 +262,23 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                         Text(
                             dayNames[i],
                             style = VoxnFont.mono(10, FontWeight.Medium),
-                            color = if (isToday) VoxnColors.purple else VoxnColors.textTertiary,
+                            color = if (isDaySelected) VoxnColors.purple else if (isDayToday) VoxnColors.electricBlue else VoxnColors.textTertiary,
                         )
                         Spacer(Modifier.height(6.dp))
                         Box(
                             modifier = Modifier.size(32.dp)
                                 .then(
-                                    if (isToday) Modifier.background(VoxnColors.purple.copy(alpha = 0.2f), CircleShape)
+                                    if (isDaySelected) Modifier.background(VoxnColors.purple.copy(alpha = 0.2f), CircleShape)
                                         .border(1.5.dp, VoxnColors.purple, CircleShape)
+                                    else if (isDayToday) Modifier.border(1.dp, VoxnColors.electricBlue.copy(alpha = 0.4f), CircleShape)
                                     else Modifier
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 "$day",
-                                style = VoxnFont.mono(13, if (isToday) FontWeight.Bold else FontWeight.Normal),
-                                color = if (isToday) VoxnColors.purple else VoxnColors.textSecondary,
+                                style = VoxnFont.mono(13, if (isDaySelected) FontWeight.Bold else FontWeight.Normal),
+                                color = if (isDaySelected) VoxnColors.purple else if (isDayToday) VoxnColors.electricBlue else VoxnColors.textSecondary,
                             )
                         }
                     }
@@ -212,13 +289,13 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
             Spacer(Modifier.height(16.dp))
 
             // Calendar events
-            if (calendarEvents.isNotEmpty()) {
+            if (displayEvents.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Event, null, tint = VoxnColors.purple, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("${calendarEvents.size} event${if (calendarEvents.size > 1) "s" else ""} today", style = VoxnFont.mono(11, FontWeight.Bold), color = VoxnColors.purple)
+                    Text("${displayEvents.size} event${if (displayEvents.size > 1) "s" else ""}", style = VoxnFont.mono(11, FontWeight.Bold), color = VoxnColors.purple)
                 }
-                calendarEvents.take(4).forEach { event ->
+                displayEvents.take(4).forEach { event ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -239,9 +316,12 @@ fun DashboardScreen(viewModel: DashboardViewModel = viewModel()) {
                         }
                     }
                 }
-                if (calendarEvents.size > 4) {
-                    Text("+${calendarEvents.size - 4} more", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary, modifier = Modifier.padding(start = 20.dp))
+                if (displayEvents.size > 4) {
+                    Text("+${displayEvents.size - 4} more", style = VoxnFont.mono(10, FontWeight.Medium), color = VoxnColors.textTertiary, modifier = Modifier.padding(start = 20.dp))
                 }
+                Spacer(Modifier.height(12.dp))
+            } else if (viewModel.calendarManager.hasPermission.collectAsStateWithLifecycle().value) {
+                Text("No events for ${if (isToday) "today" else scheduleDateLabel.lowercase()}", style = VoxnFont.caption, color = VoxnColors.textTertiary, modifier = Modifier.padding(start = 20.dp))
                 Spacer(Modifier.height(12.dp))
             }
 

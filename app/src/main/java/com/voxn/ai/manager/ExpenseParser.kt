@@ -6,6 +6,7 @@ import com.voxn.ai.data.database.entity.ExpenseEntity
 import com.voxn.ai.data.model.ExpenseCategory
 import com.voxn.ai.data.model.PaymentMethod
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import java.util.Calendar
 
 data class ParsedExpense(
@@ -102,6 +103,13 @@ class ExpenseParser(private val context: Context) {
                 paymentMethodRaw = paymentMethod.name, date = date, note = note,
             )
         )
+        try {
+            val expenses = dao.getAll().first()
+            val monthExpenses = expenses.filter { it.date >= monthStart() }
+            val daysSoFar = maxOf(1, ((System.currentTimeMillis() - monthStart()) / 86400000L).toInt())
+            val avgDaily = monthExpenses.sumOf { it.amount } / daysSoFar
+            SmartNotificationManager(context).checkSpendingSpike(amount, merchant, avgDaily)
+        } catch (_: Exception) { }
     }
 
     suspend fun deleteExpense(expense: ExpenseEntity) = dao.delete(expense)
