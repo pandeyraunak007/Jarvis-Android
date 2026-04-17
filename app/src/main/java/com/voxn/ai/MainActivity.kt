@@ -199,19 +199,21 @@ private fun MainScreen() {
             4 -> NotesScreen()
         }
 
-        // Floating JARVIS chat button
-        FloatingActionButton(
-            onClick = { showChat = true },
-            containerColor = VoxnColors.electricBlue,
-            contentColor = Color.Black,
-            shape = CircleShape,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 80.dp)
-                .navigationBarsPadding()
-                .size(56.dp),
-        ) {
-            Icon(Icons.Default.GraphicEq, "JARVIS", modifier = Modifier.size(24.dp))
+        // Floating JARVIS chat button — only on Dashboard to avoid overlap with screen FABs
+        if (selectedTab == 0) {
+            FloatingActionButton(
+                onClick = { showChat = true },
+                containerColor = VoxnColors.electricBlue,
+                contentColor = Color.Black,
+                shape = CircleShape,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 80.dp)
+                    .navigationBarsPadding()
+                    .size(56.dp),
+            ) {
+                Icon(Icons.Default.GraphicEq, "JARVIS", modifier = Modifier.size(24.dp))
+            }
         }
 
         // Custom Tab Bar
