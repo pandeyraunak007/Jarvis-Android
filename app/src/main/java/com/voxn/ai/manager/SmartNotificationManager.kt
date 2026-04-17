@@ -38,10 +38,12 @@ class SmartNotificationManager(private val context: Context) {
 
     suspend fun refresh() {
         if (!isEnabled) { removeAll(); return }
-        scheduleMorningBrief()
-        scheduleExpenseReminder()
-        scheduleEveningHabitCheck()
-        checkBudgetWarning()
+        try {
+            scheduleMorningBrief()
+            scheduleExpenseReminder()
+            scheduleEveningHabitCheck()
+            checkBudgetWarning()
+        } catch (_: Exception) { }
     }
 
     fun removeAll() {
@@ -175,7 +177,7 @@ class SmartNotificationManager(private val context: Context) {
         if (repeating) {
             alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, cal.timeInMillis, AlarmManager.INTERVAL_DAY, pending)
         } else {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pending)
+            alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pending)
         }
     }
 
