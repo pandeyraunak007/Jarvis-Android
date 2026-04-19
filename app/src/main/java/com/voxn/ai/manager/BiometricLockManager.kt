@@ -12,19 +12,27 @@ import kotlinx.coroutines.flow.StateFlow
 class BiometricLockManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("voxn_security", Context.MODE_PRIVATE)
 
-    private val _lockEnabled = MutableStateFlow(prefs.getBoolean("biometric_lock", false))
-    val lockEnabled: StateFlow<Boolean> = _lockEnabled
+    init {
+        // Keep the shared lockEnabled flow in sync with prefs for this process.
+        _lockEnabled.value = prefs.getBoolean("biometric_lock", false)
+    }
 
-    private val _isUnlocked = MutableStateFlow(false)
-    val isUnlocked: StateFlow<Boolean> = _isUnlocked
+    val lockEnabled: StateFlow<Boolean> get() = _lockEnabled
+    val isUnlocked: StateFlow<Boolean> get() = _isUnlocked
 
     fun setLockEnabled(enabled: Boolean) {
         _lockEnabled.value = enabled
         prefs.edit().putBoolean("biometric_lock", enabled).apply()
+        // Enabling the lock must immediately require authentication.
+        if (enabled) _isUnlocked.value = false
     }
 
     fun setUnlocked() {
         _isUnlocked.value = true
+    }
+
+    fun lock() {
+        _isUnlocked.value = false
     }
 
     fun needsUnlock(): Boolean {
@@ -32,6 +40,10 @@ class BiometricLockManager(context: Context) {
     }
 
     companion object {
+        // Process-scoped state so every BiometricLockManager(context) instance shares the same lock.
+        private val _lockEnabled = MutableStateFlow(false)
+        private val _isUnlocked = MutableStateFlow(false)
+
         fun isBiometricAvailable(context: Context): Boolean {
             val manager = BiometricManager.from(context)
             return manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS

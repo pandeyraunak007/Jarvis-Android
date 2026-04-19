@@ -4,6 +4,8 @@ import android.content.Context
 import com.voxn.ai.data.database.VoxnDatabase
 import com.voxn.ai.data.database.entity.HabitWithCompletions
 import com.voxn.ai.data.model.ExpenseCategory
+import com.voxn.ai.data.model.NoteCategory
+import com.voxn.ai.data.model.NotePriority
 import com.voxn.ai.data.model.PaymentMethod
 import com.voxn.ai.manager.*
 import kotlinx.coroutines.flow.first
@@ -29,6 +31,14 @@ object ChatToolCatalog {
                 "merchant" to prop("string", "Merchant or description"),
                 "category" to prop("string", "Category", listOf("Grocery", "Food", "Entertainment", "Investment", "Travel", "Bills", "Others")),
             ), listOf("amount", "merchant", "category")))
+        put(tool("create_note", "Create a note, reminder, or task. Set reminder_iso for a scheduled reminder/task (fires a notification). Use this for 'remind me to X at Y' or 'add a task'.",
+            obj(
+                "title" to prop("string", "Short title of the note/reminder/task"),
+                "body" to prop("string", "Optional detail or description"),
+                "category" to prop("string", "Category", listOf("Personal", "Office")),
+                "priority" to prop("string", "Priority", listOf("High", "Medium", "Low")),
+                "reminder_iso" to prop("string", "Reminder time as ISO 8601 (e.g. 2026-04-19T18:30:00). Omit for a plain note."),
+            ), listOf("title")))
     }
 
     private fun tool(name: String, desc: String, params: JSONObject, required: List<String>? = null): JSONObject {
@@ -55,6 +65,7 @@ class ChatToolDispatcher(private val context: Context) {
     private val expenseParser by lazy { ExpenseParser(context) }
     private val calendarManager by lazy { CalendarManager(context) }
     private val healthManager by lazy { HealthConnectManager(context) }
+    private val noteManager by lazy { NoteManager(context) }
 
     suspend fun execute(name: String, argsJson: String): String {
         val args = try { JSONObject(argsJson) } catch (_: Exception) { JSONObject() }
@@ -66,6 +77,7 @@ class ChatToolDispatcher(private val context: Context) {
             "get_notes" -> notes(args.optInt("limit", 10))
             "get_calendar" -> calendar(args.optString("day", "today"))
             "log_expense" -> logExpense(args)
+            "create_note" -> createNote(args)
             else -> JSONObject().put("error", "Unknown tool: $name").toString()
         }
     }
@@ -82,6 +94,7 @@ class ChatToolDispatcher(private val context: Context) {
         val todaySpend = expenses.filter { it.date >= todayStart  }.sumOf { it.amount }
         val monthSpend = expenses.filter { it.date >= monthStart  }.sumOf { it.amount }
 
+        healthManager.fetchAllData()
         val hd = healthManager.healthData.value
         val events = calendarManager.fetchEventsForDate(System.currentTimeMillis())
 
@@ -140,9 +153,14 @@ class ChatToolDispatcher(private val context: Context) {
         return JSONObject().put("count", list.size).put("habits", arr).toString()
     }
 
-    private fun health(): String {
+    private suspend fun health(): String {
+        healthManager.fetchAllData()
         val d = healthManager.healthData.value
+        val hasPerms = healthManager.hasPermissions.value
+        val available = healthManager.isAvailable.value
         return JSONObject().apply {
+            put("available", available)
+            put("authorized", hasPerms)
             put("steps", d.steps)
             put("sleep_hours", String.format("%.1f", d.sleepHours).toDouble())
             put("calories_burned", d.caloriesBurned.toInt())
@@ -215,6 +233,49 @@ class ChatToolDispatcher(private val context: Context) {
                 put("category", category.name)
             })
         }.toString()
+    }
+
+    private suspend fun createNote(args: JSONObject): String {
+        val title = args.optString("title", "").trim()
+        if (title.isEmpty()) {
+            return JSONObject().put("error", "Missing title").toString()
+        }
+        val body = args.optString("body", "")
+        val category = NoteCategory.fromString(args.optString("category", "Personal"))
+        val priority = NotePriority.fromString(args.optString("priority", "Medium"))
+        val reminderIso = args.optString("reminder_iso", "")
+        val reminderMillis = parseReminderIso(reminderIso)
+        if (reminderIso.isNotEmpty() && reminderMillis == null) {
+            return JSONObject().put("error", "Invalid reminder_iso; expected yyyy-MM-dd'T'HH:mm:ss").toString()
+        }
+        noteManager.addNote(title, body, category, priority, dueDate = null, reminderDate = reminderMillis)
+        return JSONObject().apply {
+            put("success", true)
+            put("created", JSONObject().apply {
+                put("title", title)
+                put("category", category.name)
+                put("priority", priority.name)
+                put("reminder", if (reminderMillis != null) isoDate(reminderMillis) else JSONObject.NULL)
+            })
+        }.toString()
+    }
+
+    private fun parseReminderIso(iso: String): Long? {
+        if (iso.isEmpty()) return null
+        val patterns = listOf(
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ssZ",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm",
+            "yyyy-MM-dd HH:mm",
+        )
+        for (p in patterns) {
+            try {
+                val sdf = SimpleDateFormat(p, Locale.getDefault())
+                return sdf.parse(iso)?.time ?: continue
+            } catch (_: Exception) { }
+        }
+        return null
     }
 
     private fun isoDate(millis: Long): String =

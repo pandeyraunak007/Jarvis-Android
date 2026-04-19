@@ -83,7 +83,7 @@ class GroqService(private val context: Context) {
                 val choice = choices.getJSONObject(0)
                 val delta = choice.optJSONObject("delta") ?: continue
 
-                val content = delta.optString("content", "")
+                val content = if (delta.isNull("content")) "" else delta.optString("content", "")
                 if (content.isNotEmpty()) trySend(GroqStreamEvent.ContentDelta(content))
 
                 val toolCalls = delta.optJSONArray("tool_calls")

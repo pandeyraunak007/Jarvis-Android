@@ -247,6 +247,7 @@ private fun ToolChip(name: String) {
         "get_notes" -> "SEARCHING NOTES"
         "get_calendar" -> "CHECKING CALENDAR"
         "log_expense" -> "LOGGING EXPENSE"
+        "create_note" -> "CREATING REMINDER"
         else -> name.uppercase()
     }
     Row(

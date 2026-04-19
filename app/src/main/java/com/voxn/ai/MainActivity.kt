@@ -74,6 +74,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        // Re-engage biometric lock when the app goes to background so returning users must re-auth.
+        BiometricLockManager(this).lock()
+    }
+
     private fun requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -128,7 +134,9 @@ private fun BiometricLockScreen(biometricManager: BiometricLockManager) {
                 onError = { /* stay on lock screen */ },
             )
         } else {
-            biometricManager.setUnlocked() // no biometric hardware, skip
+            // Biometric hardware disappeared (removed/disabled) — disable the lock to avoid lockout.
+            biometricManager.setLockEnabled(false)
+            biometricManager.setUnlocked()
         }
     }
 
@@ -190,13 +198,15 @@ private fun MainScreen() {
     }
 
     Box(modifier = Modifier.fillMaxSize().background(VoxnColors.backgroundDark)) {
-        // Content
-        when (selectedTab) {
-            0 -> DashboardScreen()
-            1 -> HealthScreen()
-            2 -> HabitsScreen()
-            3 -> SpendingScreen()
-            4 -> NotesScreen()
+        // Content — apply status-bar inset so top UI clears the camera cutout
+        Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            when (selectedTab) {
+                0 -> DashboardScreen()
+                1 -> HealthScreen()
+                2 -> HabitsScreen()
+                3 -> SpendingScreen()
+                4 -> NotesScreen()
+            }
         }
 
         // Floating JARVIS chat button — only on Dashboard to avoid overlap with screen FABs
